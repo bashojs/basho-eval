@@ -173,7 +173,9 @@ async function shellCmd(template, input, nextArgs) {
 
 function evalImport(filename, alias) {
   const module =
-    filename.startsWith("./") || filename.startsWith("../")
+    filename.startsWith("./") ||
+    filename.startsWith("../") ||
+    filename.endsWith(".js")
       ? require(path.join(process.cwd(), filename))
       : require(filename);
   global[alias] = module;
