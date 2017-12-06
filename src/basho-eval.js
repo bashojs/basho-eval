@@ -380,11 +380,12 @@ export async function evaluate(
         const { cursor, expression } = munch(args.slice(1));
         const fn = await evalWithCatch(
           `basho failed to evaluate expression: ${expression}.`,
-          `(x, i) => (${expression})`
+          `(x, i) => (${toExpressionString(expression)})`
         );
         const newSeq = input.map(async (x, i) => {
-          const res = await fn(x, i);
-          onLog(res);
+          if (!(x instanceof PipelineError)) {
+            onLog(await fn(x, i));
+          }
           return x;
         });
         return await doEval(args.slice(cursor + 1), newSeq);
@@ -526,11 +527,12 @@ export async function evaluate(
         const { cursor, expression } = munch(args.slice(1));
         const fn = await evalWithCatch(
           `basho failed to evaluate expression: ${expression}.`,
-          `(x, i) => (${expression})`
+          `(x, i) => (${toExpressionString(expression)})`
         );
         const newSeq = input.map(async (x, i) => {
-          const res = await fn(x, i);
-          onWrite(res);
+          if (!(x instanceof PipelineError)) {
+            onWrite(await fn(x, i));
+          }
           return x;
         });
         return await doEval(args.slice(cursor + 1), newSeq);
