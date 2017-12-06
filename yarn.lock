@@ -288,6 +288,13 @@ balanced-match@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/balanced-match/-/balanced-match-1.0.0.tgz#89b4d199ab2bee49de164ea02b89ce462d71b767"
 
+basho-eval@^0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/basho-eval/-/basho-eval-0.0.3.tgz#42a809825bab548bf65d4e640d48890390f28f81"
+  dependencies:
+    lazily-async "^0.0.22"
+    nodefunc-promisify "^2.0.2"
+
 brace-expansion@^1.1.7:
   version "1.1.8"
   resolved "https://registry.yarnpkg.com/brace-expansion/-/brace-expansion-1.1.8.tgz#c07b211c7c952ec1f8efd51a77ef0d1d3990a292"

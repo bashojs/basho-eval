@@ -2,7 +2,9 @@
   "name": "basho-eval",
   "version": "0.0.3",
   "author": "Isotropy Team<isotropy@agilehead.com>",
-  "contributors": ["Jeswin Kumar<jeswinpk@agilehead.com>"],
+  "contributors": [
+    "Jeswin Kumar<jeswinpk@agilehead.com>"
+  ],
   "scripts": {
     "build": "./build.sh",
     "test": "mocha dist/test/test.js",
@@ -10,6 +12,7 @@
   },
   "main": "dist/basho-eval.js",
   "dependencies": {
+    "basho-eval": "^0.0.3",
     "lazily-async": "^0.0.22",
     "nodefunc-promisify": "^2.0.2"
   },
