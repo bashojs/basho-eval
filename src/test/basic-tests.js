@@ -259,6 +259,15 @@ export default function run() {
         result: ["10"]
       });
     });
+
+    it(`Escapes shell templates`, async () => {
+      const output = await evaluate(['"la la.txt"', "-e", "echo ${x}"]);
+      (await toResult(output)).should.deepEqual({
+        mustPrint: true,
+        result: ["la la.txt"]
+      });
+    });
+
   
     it(`Passes an object to a shell command`, async () => {
       const output = await evaluate(["{ name: 'kai' }", "-e", "echo ${x.name}"]);

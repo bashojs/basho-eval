@@ -86,6 +86,12 @@ function attachErrorHandler(input) {
   });
 }
 
+function shellEscape(str) {
+  return str
+    .replace(/([^A-Za-z0-9_\-.,:\/@\n])/g, "\\$1")
+    .replace(/\n/g, "'\n'");
+}
+
 async function evalExpression(exp, _input, nextArgs) {
   return typeof _input === "undefined" || _input === ""
     ? await (async () => {
@@ -144,7 +150,11 @@ async function shellCmd(template, input, nextArgs) {
               ? x
               : await (async () => {
                   try {
-                    const shellResult = await exec(await fn(x, i));
+                    const cmd = await fn(
+                      typeof x === "string" ? shellEscape(x) : x,
+                      i
+                    );
+                    const shellResult = await exec(cmd);
                     const items = shellResult
                       .split("\n")
                       .filter(x => x !== "")
