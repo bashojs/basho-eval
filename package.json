@@ -12,7 +12,6 @@
   },
   "main": "dist/basho-eval.js",
   "dependencies": {
-    "basho-eval": "^0.0.3",
     "lazily-async": "^0.0.22",
     "nodefunc-promisify": "^2.0.2"
   },
