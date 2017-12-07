@@ -277,24 +277,6 @@ export default function run() {
       });
     });
   
-    it(`Removes an expression result from the pipeline`, async () => {
-      const output = await evaluate([
-        "10",
-        "-j",
-        "x+1",
-        "-j",
-        "x+2",
-        "-j",
-        "x+3",
-        "-d",
-        "-d"
-      ]);
-      (await toResult(output)).should.deepEqual({
-        mustPrint: true,
-        result: [11]
-      });
-    });
-  
     it(`Calls a shell command which outputs multiple lines`, async () => {
       const output = await evaluate(["10", "-e", "echo ${x};echo ${x};"]);
       (await toResult(output)).should.deepEqual({
@@ -340,25 +322,7 @@ export default function run() {
       });
     });
   
-    it(`References the result stack for input`, async () => {
-      const output = await evaluate([
-        "[10,20,30,40]",
-        "-j",
-        "x+1",
-        "-j",
-        "x+2",
-        "--stack",
-        "2",
-        "-j",
-        "x"
-      ]);
-      (await toResult(output)).should.deepEqual({
-        mustPrint: true,
-        result: [10, 20, 30, 40]
-      });
-    });
-  
-    it(`Creates a named result but does not seek`, async () => {
+    it(`Creates a named result`, async () => {
       const output = await evaluate([
         "[10,20,30,40]",
         "-j",
@@ -366,28 +330,6 @@ export default function run() {
         "-j",
         "x+2",
         "-n",
-        "add2",
-        "-j",
-        "x+10"
-      ]);
-      (await toResult(output)).should.deepEqual({
-        mustPrint: true,
-        result: [23, 33, 43, 53]
-      });
-    });
-  
-    it(`Creates a named result and seeks`, async () => {
-      const output = await evaluate([
-        "[10,20,30,40]",
-        "-j",
-        "x+1",
-        "-j",
-        "x+2",
-        "-n",
-        "add2",
-        "-j",
-        "x*100",
-        "-s",
         "add2",
         "-j",
         "x+10"

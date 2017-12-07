@@ -12,7 +12,6 @@ const exec = promisify(child_process.exec);
 const options = [
   "-a",         //            treat array as a whole
   "-c",         // n1,n2,n3   combine a named stages
-  "-d",         //            removes the previous result from the pipeline
   "-e",         //            shell command
   "-f",         //            filter
   "-i",         //            import a file or module
@@ -23,12 +22,9 @@ const options = [
   "-q",         //            quote expression as string
   "-p",         //            print
   "-r",         //            reduce
-  "-s",         //            recall (seek) a named result
   "-t",         //            terminate evaluation
   "-w",         //            Same as log, but without the newline
   "--error",    //            Error handling
-  "--stack",    // n          Use input from the result stack
-  "--nostack"   //            Disables the result stack
 ];
 
 class QuotedExpression {
@@ -287,21 +283,6 @@ export async function evaluate(
       }
     ],
 
-    /* Removes an expression result from the pipeline */
-    [
-      x => x === "-d",
-      async () =>
-        await evaluate(
-          args.slice(1),
-          unwrapSequence(results.slice(-2)[0]),
-          results.slice(0, -1),
-          useResultStack,
-          mustPrint,
-          onLog,
-          onWrite
-        )
-    ],
-
     /* Execute shell command */
     [
       x => x === "-e",
@@ -432,21 +413,6 @@ export async function evaluate(
         )
     ],
 
-    /* Disable result stacking */
-    [
-      x => x === "--nostack",
-      async () =>
-        await evaluate(
-          args.slice(1),
-          input,
-          results,
-          true,
-          mustPrint,
-          onLog,
-          onWrite
-        )
-    ],
-
     /* Print */
     [
       x => x === "-p",
@@ -475,25 +441,6 @@ export async function evaluate(
         );
         return await doEval(args.slice(cursor + 1), Seq.of([reduced]));
       }
-    ],
-
-    /* Seek a named stream */
-    [
-      x => x === "-s",
-      async () => {
-        const seq = findSequence(results, args[1]);
-        return await doEval(args.slice(2), seq);
-      }
-    ],
-
-    /* Use results from the stack */
-    [
-      x => x === "--stack",
-      async () =>
-        await doEval(
-          args.slice(2),
-          unwrapSequence(results[results.length - 1 - parseInt(args[1])])
-        )
     ],
 
     /* Terminate the pipeline */
