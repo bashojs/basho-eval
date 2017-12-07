@@ -31,7 +31,7 @@ function onWrite(msg) {
 }
 
 async function toResult(output) {
-  const result = await output.result.toArray();
+  const result = (await output.result.toArray()).map(x => x.value);
   return { mustPrint: output.mustPrint, result };
 }
 
@@ -132,8 +132,6 @@ export default function run() {
       const output = await evaluate(
         ["[1,2,3,4]", "-l", "x+10", "-j", "x**2"],
         undefined,
-        [],
-        true,
         true,
         onLog
       );
@@ -149,8 +147,6 @@ export default function run() {
       const output = await evaluate(
         ["[1,2,3,4]", "-w", "x+10", "-j", "x**2"],
         undefined,
-        [],
-        true,
         true,
         onLog,
         onWrite
