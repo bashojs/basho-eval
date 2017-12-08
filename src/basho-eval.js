@@ -1,3 +1,4 @@
+/* @flow */
 import path from "path";
 import child_process from "child_process";
 import promisify from "nodefunc-promisify";
@@ -5,7 +6,7 @@ import { Seq, sequence } from "lazily-async";
 import exception from "./exception";
 import { log } from "util";
 
-const exec = promisify(child_process.exec);
+const exec: Promise<() => string> = promisify(child_process.exec);
 
 // prettier-ignore
 /* Options: */
@@ -28,51 +29,70 @@ const options = [
 ];
 
 class QuotedExpression {
-  constructor(str) {
+  str: Array<string>;
+
+  constructor(str: Array<string>) {
     this.str = str;
   }
 }
 
 export class PipelineItem {
-  constructor(previousItem, name) {
+  previousItem: ?PipelineItem;
+  name: ?string;
+
+  constructor(previousItem: ?PipelineItem, name: ?string) {
     this.previousItem = previousItem;
     this.name = name;
   }
 }
 
 export class PipelineValue extends PipelineItem {
-  constructor(value, previousItem, name) {
+  value: any;
+
+  constructor(value: any, previousItem?: ?PipelineItem, name?: string) {
     super(previousItem, name);
     this.value = value;
   }
 
-  clone(name) {
+  clone(name: string): PipelineValue {
     return new PipelineValue(this.value, this.previousItem, name);
   }
 }
 
 export class PipelineError extends PipelineItem {
-  constructor(message, error, previousItem, name) {
+  message: string;
+  error: any;
+
+  constructor(
+    message: string,
+    error: any,
+    previousItem?: ?PipelineItem,
+    name?: ?string
+  ) {
     super(previousItem, name);
     this.message = message;
     this.error = error;
   }
 
-  clone(name) {
+  clone(name: string): PipelineError {
     return new PipelineError(this.message, this.error, this.previousItem, name);
   }
 }
 
 class EvalError {
-  constructor(error) {
+  error: any;
+
+  constructor(error: any) {
     this.error = error;
   }
 }
 
-async function evalWithCatch(exp) {
+async function evalWithCatch(
+  exp: string
+): Promise<(...args: any) => Promise<EvalError> | Promise<any>> {
   try {
-    const fn = await eval(exp);
-    return async function() {
+    const fn: Function = await eval(exp);
+    return async function(): Promise<any> {
       try {
         return await fn.apply(undefined, arguments);
       } catch (ex) {
@@ -80,24 +100,28 @@ async function evalWithCatch(exp) {
       }
     };
   } catch (ex) {
-    return () => {
+    return async function(): Promise<EvalError> {
       return new EvalError(ex);
     };
   }
 }
 
-function shellEscape(str) {
+function shellEscape(str: string): string {
   return str
     .replace(/([^A-Za-z0-9_\-.,:\/@\n])/g, "\\$1")
     .replace(/\n/g, "'\n'");
 }
 
-async function evalExpression(exp, _input, nextArgs) {
+async function evalExpression(
+  exp: string,
+  _input: string | Seq<PipelineValue | PipelineError>,
+  nextArgs: Array<string>
+): Promise<Seq<PipelineValue | PipelineError>> {
   return typeof _input === "undefined" || _input === ""
     ? await (async () => {
         const code = `async () => (${exp})`;
         const fn = await evalWithCatch(code);
-        const input = await fn();
+        const input: EvalError | Array<any> | any = await fn();
         return input instanceof EvalError
           ? Seq.of([
               new PipelineError(
@@ -117,11 +141,14 @@ async function evalExpression(exp, _input, nextArgs) {
             : Array.isArray(_input)
               ? Seq.of(_input.map(i => new PipelineValue(i)))
               : Seq.of([new PipelineValue(_input)]);
-        return input.map(
-          async (x, i) =>
-            x instanceof PipelineError
-              ? x
-              : await (async () => {
+        return input.map(async function(
+          x: PipelineValue | PipelineError,
+          i: number
+        ): Promise<PipelineValue | PipelineError> {
+          return x instanceof PipelineError
+            ? x
+            : x instanceof PipelineValue
+              ? await (async () => {
                   const fn = await evalWithCatch(code);
                   const result = await fn(await x.value, i);
                   return result instanceof EvalError
@@ -132,18 +159,58 @@ async function evalExpression(exp, _input, nextArgs) {
                       )
                     : new PipelineValue(result, x);
                 })()
-        );
+              : exception(`Invalid item in sequence`);
+        });
       })();
 }
 
-async function shellCmd(template, input, nextArgs) {
+async function shellCmd(
+  template: string,
+  input?: Seq<PipelineValue | PipelineError>,
+  nextArgs: Array<string>
+): Promise<Seq<PipelineValue | PipelineError>> {
   const fn = await evalWithCatch(`async (x, i) => \`${template}\``);
-  return typeof input === "undefined" || input === ""
-    ? await (async () => {
+  return typeof input !== "undefined" && typeof input !== null
+    ? input.map(async function(
+        x: PipelineValue | PipelineError,
+        i: number
+      ): Promise<PipelineValue | PipelineError> {
+        return x instanceof PipelineError
+          ? x
+          : await (async () => {
+              try {
+                const value = await x.value;
+                const cmd = await fn(
+                  typeof value === "string" ? shellEscape(value) : value,
+                  i
+                );
+                const shellResult = await exec(cmd);
+                const items = shellResult
+                  .split("\n")
+                  .filter(x => x !== "")
+                  .map(x => x.replace(/\n$/, ""));
+                return new PipelineValue(
+                  items.length === 1 ? items[0] : items,
+                  x
+                );
+              } catch (ex) {
+                return new PipelineError(
+                  `basho failed to execute shell command: ${template}`,
+                  ex
+                );
+              }
+            })();
+      })
+    : await (async () => {
         try {
           const cmd = await fn();
           return cmd instanceof EvalError
-            ? Seq.of([cmd])
+            ? Seq.of([
+                new PipelineError(
+                  `basho failed to evaluate template: ${template}.`,
+                  cmd.error
+                )
+              ])
             : await (async () => {
                 const shellResult = await exec(cmd);
                 return Seq.of(
@@ -162,40 +229,10 @@ async function shellCmd(template, input, nextArgs) {
             )
           ]);
         }
-      })()
-    : (() => {
-        return input.map(
-          async (x, i) =>
-            x instanceof PipelineError
-              ? x
-              : await (async () => {
-                  try {
-                    const value = await x.value;
-                    const cmd = await fn(
-                      typeof value === "string" ? shellEscape(value) : value,
-                      i
-                    );
-                    const shellResult = await exec(cmd);
-                    const items = shellResult
-                      .split("\n")
-                      .filter(x => x !== "")
-                      .map(x => x.replace(/\n$/, ""));
-                    return new PipelineValue(
-                      items.length === 1 ? items[0] : items,
-                      x
-                    );
-                  } catch (ex) {
-                    return new PipelineError(
-                      `basho failed to execute shell command: ${template}`,
-                      ex
-                    );
-                  }
-                })()
-        );
       })();
 }
 
-function evalImport(filename, alias) {
+function evalImport(filename: string, alias: string): void {
   const module =
     filename.startsWith("./") ||
     filename.startsWith("../") ||
@@ -205,38 +242,45 @@ function evalImport(filename, alias) {
   global[alias] = module;
 }
 
-async function filter(exp, input) {
+async function filter(
+  exp: string,
+  input: Seq<PipelineValue | PipelineError>
+): Promise<Seq<PipelineValue | PipelineError>> {
   const code = `async (x, i) => (${exp})`;
   const fn = await evalWithCatch(code);
-  return input.filter(
-    async (x, i) =>
-      x instanceof PipelineError
-        ? true
-        : await (async () => {
-            const result = await fn(await x.value, i);
-            return result instanceof EvalError ? true : result;
-          })()
-  );
+  return input.filter(async function(
+    x: PipelineValue | PipelineError,
+    i: number
+  ): Promise<boolean> {
+    return x instanceof PipelineError
+      ? true
+      : await (async () => {
+          const result: EvalError | boolean = await fn(await x.value, i);
+          return result instanceof EvalError ? true : result;
+        })();
+  });
 }
 
 async function flatMap(exp, input) {
   const code = `async (x, i) => (${exp})`;
   const fn = await evalWithCatch(code);
-  return input.flatMap(
-    async (x, i) =>
-      x instanceof PipelineError
-        ? [x]
-        : await (async () => {
-            const result = await fn(await x.value, i);
-            return result instanceof EvalError
-              ? new PipelineError(
-                  `basho failed to evaluate expression: ${exp}.`,
-                  result.error,
-                  x
-                )
-              : result.map(r => new PipelineValue(r, x));
-          })()
-  );
+  return input.flatMap(async function(
+    x: PipelineValue | PipelineError,
+    i: number
+  ): Promise<AsyncIterable<PipelineValue | PipelineResult>> {
+    return x instanceof PipelineError
+      ? [x]
+      : await (async () => {
+          const result = await fn(await x.value, i);
+          return result instanceof EvalError
+            ? new PipelineError(
+                `basho failed to evaluate expression: ${exp}.`,
+                result.error,
+                x
+              )
+            : result.map(r => new PipelineValue(r, x));
+        })();
+  });
 }
 
 async function reduce(exp, input, initialValueExp) {
@@ -276,7 +320,9 @@ async function reduce(exp, input, initialValueExp) {
 /*
   Consume parameters until we reach an option flag (-p, -e etc)
 */
-function munch(parts) {
+function munch(
+  parts: Array<string>
+): { cursor: number, expression: Array<string> | QuotedExpression } {
   function doMunch(parts, expression, cursor) {
     return !parts.length || options.includes(parts[0])
       ? { cursor, expression }
@@ -290,14 +336,16 @@ function munch(parts) {
     : doMunch(parts, [], 0);
 }
 
-function toExpressionString(args) {
+function toExpressionString(args: Array<string> | QuotedExpression) {
   return args instanceof QuotedExpression
     ? `"${args.str.join(" ")}"`
     : args.join(" ");
 }
 
 function findNamedValue(name, pipelineItem) {
-  return typeof pipelineItem !== "undefined"
+  return typeof pipelineItem !== "undefined" &&
+    pipelineItem.name &&
+    pipelineItem.previousItem
     ? pipelineItem.name === name
       ? pipelineItem.value
       : findNamedValue(name, pipelineItem.previousItem)
@@ -329,8 +377,22 @@ function getPrinter(printFn) {
   };
 }
 
-export async function evaluate(args, input, mustPrint = true, onLog, onWrite) {
-  const cases = [
+export async function evaluate(
+  args: Array<string>,
+  input: Seq<PipelineValue | PipelineError>,
+  mustPrint: boolean = true,
+  onLog: Function,
+  onWrite: Function
+) {
+  const cases: Array<
+    [
+      (x: string) => boolean,
+      () => Promise<{
+        mustPrint: boolean,
+        result: Seq<PipelineValue | PipelineError>
+      }>
+    ]
+  > = [
     /* Enumerate sequence into an array */
     [
       x => x === "-a",
@@ -382,7 +444,9 @@ export async function evaluate(args, input, mustPrint = true, onLog, onWrite) {
       async () => {
         const { cursor, expression } = munch(args.slice(1));
         const newSeq = input.map(async (x, i) => {
-          const fn = await evalWithCatch(`async (x, i) => (${expression})`);
+          const fn = await evalWithCatch(
+            `async (x, i) => (${toExpressionString(expression)})`
+          );
           return x instanceof PipelineError
             ? await (async () => {
                 const result = await fn(x, i);
@@ -455,7 +519,9 @@ export async function evaluate(args, input, mustPrint = true, onLog, onWrite) {
     [
       x => x === "-n",
       async () => {
-        const newSeq = input.map(async (x, i) => x.clone(args[1]));
+        const newSeq: Seq<PipelineValue | PipelineError> = input.map(
+          async (x, i) => x.clone(args[1])
+        );
         return await doEval(args.slice(2), newSeq);
       }
     ],
@@ -478,13 +544,19 @@ export async function evaluate(args, input, mustPrint = true, onLog, onWrite) {
       x => x === "-r",
       async () => {
         const { cursor, expression } = munch(args.slice(1));
-        const initialValue = expression.slice(-1)[0];
-        const reduced = await reduce(
-          toExpressionString(expression.slice(0, -1)),
-          input,
-          initialValue
-        );
-        return await doEval(args.slice(cursor + 1), Seq.of([reduced]));
+        return !(expression instanceof QuotedExpression)
+          ? await (async () => {
+              const initialValue = expression.slice(-1)[0];
+              const reduced = await reduce(
+                toExpressionString(expression.slice(0, -1)),
+                input,
+                initialValue
+              );
+              return await doEval(args.slice(cursor + 1), Seq.of([reduced]));
+            })()
+          : exception(
+              `A quoted expression cannot be used in a reduce expression.`
+            );
       }
     ],
 
@@ -494,7 +566,9 @@ export async function evaluate(args, input, mustPrint = true, onLog, onWrite) {
       async () => {
         const { cursor, expression } = munch(args.slice(1));
         async function* asyncGenerator() {
-          const fn = await evalWithCatch(`(x, i) => (${expression})`);
+          const fn = await evalWithCatch(
+            `(x, i) => (${toExpressionString(expression)})`
+          );
           let i = 0;
           for await (const x of input) {
             const result = await fn(await x.value, i);
@@ -536,7 +610,13 @@ export async function evaluate(args, input, mustPrint = true, onLog, onWrite) {
     ]
   ];
 
-  async function doEval(args, input) {
+  async function doEval(
+    args: Array<string>,
+    input: Seq<PipelineValue | PipelineError>
+  ): Promise<{
+    mustPrint: boolean,
+    result: Seq<PipelineValue | PipelineError>
+  }> {
     return await evaluate(args, input, mustPrint, onLog, onWrite);
   }
 
