@@ -396,7 +396,7 @@ async function evaluateInternal(
   mustPrint: boolean,
   onLog: BashoLogFn,
   onWrite: BashoLogFn,
-  isInitialInput = false
+  isInitialInput: boolean
 ): Promise<BashoEvaluationResult> {
   const cases: Array<[(arg: string) => boolean, () => Promise<any>]> = [
     /* Enumerate sequence into an array */
@@ -410,7 +410,8 @@ async function evaluateInternal(
             new PipelineValue(
               items.map(x => (x instanceof PipelineValue ? x.value : x))
             )
-          ])
+          ]),
+          false
         );
       }
     ],
@@ -430,7 +431,8 @@ async function evaluateInternal(
                 }),
                 x
               )
-          )
+          ),
+          false
         )
     ],
 
@@ -446,7 +448,8 @@ async function evaluateInternal(
             input,
             args.slice(cursor + 1),
             isInitialInput
-          )
+          ),
+          false
         );
       }
     ],
@@ -474,7 +477,7 @@ async function evaluateInternal(
             : x;
         });
 
-        return await evalShorthand(args.slice(cursor + 1), newSeq);
+        return await evalShorthand(args.slice(cursor + 1), newSeq, false);
       }
     ],
 
@@ -484,7 +487,7 @@ async function evaluateInternal(
       async () => {
         const { cursor, expression } = munch(args.slice(1));
         const filtered = await filter(toExpressionString(expression), input);
-        return await evalShorthand(args.slice(cursor + 1), filtered);
+        return await evalShorthand(args.slice(cursor + 1), filtered, false);
       }
     ],
 
@@ -500,7 +503,7 @@ async function evaluateInternal(
           onLog,
           onWrite,
           isInitialInput
-        )
+        );
       }
     ],
 
@@ -516,7 +519,8 @@ async function evaluateInternal(
             input,
             args.slice(cursor + 1),
             isInitialInput
-          )
+          ),
+          false
         );
       }
     ],
@@ -530,7 +534,7 @@ async function evaluateInternal(
       async () => {
         const { cursor, expression } = munch(args.slice(1));
         const mapped = await flatMap(toExpressionString(expression), input);
-        return await evalShorthand(args.slice(cursor + 1), mapped);
+        return await evalShorthand(args.slice(cursor + 1), mapped, false);
       }
     ],
 
@@ -539,7 +543,7 @@ async function evaluateInternal(
       x => x === "-n",
       async () => {
         const newSeq = input.map(async (x, i) => x.clone(args[1]));
-        return await evalShorthand(args.slice(2), newSeq);
+        return await evalShorthand(args.slice(2), newSeq, false);
       }
     ],
 
@@ -586,7 +590,8 @@ async function evaluateInternal(
               );
               return await evalShorthand(
                 args.slice(cursor + 1),
-                Seq.of([reduced])
+                Seq.of([reduced]),
+                false
               );
             })()
           : exception(
@@ -625,7 +630,8 @@ async function evaluateInternal(
         }
         return await evalShorthand(
           args.slice(cursor + 1),
-          new Seq(asyncGenerator)
+          new Seq(asyncGenerator),
+          false
         );
       }
     ],
@@ -645,7 +651,8 @@ async function evaluateInternal(
             input,
             args.slice(cursor),
             isInitialInput
-          )
+          ),
+          false
         );
       }
     ]
@@ -676,15 +683,27 @@ async function evaluateInternal(
         }
         return x;
       });
-      return await evalShorthand(args.slice(cursor + 1), newSeq);
+      return await evalShorthand(
+        args.slice(cursor + 1),
+        newSeq,
+        isInitialInput
+      );
     };
   }
 
   async function evalShorthand(
     args: Array<string>,
-    input: Seq<PipelineItem>
+    input: Seq<PipelineItem>,
+    isInitialInput: boolean
   ): Promise<BashoEvaluationResult> {
-    return await evaluateInternal(args, input, mustPrint, onLog, onWrite);
+    return await evaluateInternal(
+      args,
+      input,
+      mustPrint,
+      onLog,
+      onWrite,
+      isInitialInput
+    );
   }
 
   return args.length
