@@ -493,7 +493,14 @@ async function evaluateInternal(
       x => x === "-i",
       async () => {
         evalImport(args[1], args[2]);
-        return await evalShorthand(args.slice(3), input);
+        return await evaluateInternal(
+          args.slice(3),
+          input,
+          mustPrint,
+          onLog,
+          onWrite,
+          isInitialInput
+        )
       }
     ],
 
