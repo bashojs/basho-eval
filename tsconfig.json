@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist",
+    "allowJs": false,
+    "target": "es2015",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "declaration": true,
+    "lib": ["es2017", "esnext.asynciterable"],
+    "allowSyntheticDefaultImports": true,
+    "sourceMap": true,
+    "strict": true,
+    "typeRoots": ["./node_modules/@types", "./types"],
+    "types": [
+      "node",
+      "nodefunc-promisify"
+    ]
+  },
+  "include": ["./src/**/*"]
+}
