@@ -128,7 +128,7 @@ async function evalExpression(
         return input instanceof EvalError
           ? Seq.of([
               new PipelineError(
-                `basho failed to evaluate expression: ${exp}.`,
+                `Failed to evaluate expression: ${exp}.`,
                 input.error
               )
             ])
@@ -148,7 +148,7 @@ async function evalExpression(
                     const result = await fn(await x.value, i);
                     return result instanceof EvalError
                       ? new PipelineError(
-                          `basho failed to evaluate expression: ${exp}.`,
+                          `Failed to evaluate expression: ${exp}.`,
                           result.error,
                           x
                         )
@@ -173,7 +173,7 @@ async function shellCmd(
           return cmd instanceof EvalError
             ? Seq.of([
                 new PipelineError(
-                  `basho failed to execute shell command: ${template}`,
+                  `Failed to execute shell command: ${template}`,
                   cmd.error
                 )
               ])
@@ -190,7 +190,7 @@ async function shellCmd(
         } catch (ex) {
           return Seq.of([
             new PipelineError(
-              `basho failed to execute shell command: ${template}`,
+              `Failed to execute shell command: ${template}`,
               ex
             )
           ]);
@@ -220,7 +220,7 @@ async function shellCmd(
                       );
                     } catch (ex) {
                       return new PipelineError(
-                        `basho failed to execute shell command: ${template}`,
+                        `Failed to execute shell command: ${template}`,
                         ex
                       );
                     }
@@ -274,7 +274,7 @@ async function flatMap(
               const result: Array<any> | EvalError = await fn(await x.value, i);
               return result instanceof EvalError
                 ? new PipelineError(
-                    `basho failed to evaluate expression: ${exp}.`,
+                    `Failed to evaluate expression: ${exp}.`,
                     result.error,
                     x
                   )
@@ -298,7 +298,7 @@ async function reduce(
   const output =
     initialValue instanceof EvalError
       ? new PipelineError(
-          `basho failed to evaluate expression: ${initialValue}.`,
+          `Failed to evaluate expression: ${initialValue}.`,
           initialValue.error
         )
       : await input.reduce(
@@ -312,7 +312,7 @@ async function reduce(
                       const result = await fn(acc, await x.value, i);
                       return result instanceof EvalError
                         ? new PipelineError(
-                            `basho failed to evaluate expression: ${exp}.`,
+                            `Failed to evaluate expression: ${exp}.`,
                             result.error,
                             x
                           )
@@ -326,36 +326,45 @@ async function reduce(
 
 type MunchResult = {
   cursor: number;
-  expression: QuotedExpression | Array<string>;
+  expression: string;
+  otherExpressions?: Array<string>;
 };
 
 /* Consume parameters until we reach an option flag (-p, -e etc) */
-function munch(parts: Array<string>): MunchResult {
+function munch(
+  parts: Array<string>,
+  numOtherExpressions: number = 0
+): MunchResult {
   function doMunch(
     parts: Array<string>,
-    munchResult: Array<string>,
+    args: Array<string>,
     cursor: number
-  ): { cursor: number; munchResult: Array<string> } {
+  ): { cursor: number; args: Array<string> } {
     return !parts.length || options.includes(parts[0])
-      ? { cursor, munchResult }
-      : doMunch(parts.slice(1), munchResult.concat(parts[0]), cursor + 1);
+      ? { cursor, args }
+      : doMunch(parts.slice(1), args.concat(parts[0]), cursor + 1);
   }
 
-  return parts[0] === "-q"
-    ? (() => {
-        const { cursor, munchResult } = doMunch(parts.slice(1), [], 1);
-        return { cursor, expression: new QuotedExpression(munchResult) };
-      })()
-    : (() => {
-        const { cursor, munchResult } = doMunch(parts, [], 0);
-        return { cursor, expression: munchResult };
-      })();
-}
+  const isQuoted = parts[0] === "-q";
 
-function toExpressionString(args: QuotedExpression | Array<string>): string {
-  return args instanceof QuotedExpression
-    ? `"${args.str.join(" ")}"`
-    : args.join(" ");
+  const { cursor, args } = doMunch(
+    parts.slice(isQuoted ? 1 : 0),
+    [],
+    isQuoted ? 1 : 0
+  );
+  const result =
+    numOtherExpressions > 0
+      ? {
+          cursor,
+          expression: `${args.slice(0, -numOtherExpressions).join(" ")}`,
+          otherExpressions: args.slice(-numOtherExpressions)
+        }
+      : { cursor, expression: `${args.join(" ")}` };
+
+  return {
+    ...result,
+    expression: isQuoted ? `"${result.expression}"` : result.expression
+  };
 }
 
 function findNamedValue(
@@ -444,7 +453,7 @@ async function evaluateInternal(
         return await evalShorthand(
           args.slice(cursor + 1),
           await shellCmd(
-            toExpressionString(expression),
+            expression,
             input,
             args.slice(cursor + 1),
             isInitialInput
@@ -466,9 +475,7 @@ async function evaluateInternal(
                 const result = await fn(x, i);
                 return result instanceof EvalError
                   ? new PipelineError(
-                      `basho failed to evaluate error expression: ${
-                        expression
-                      }.`,
+                      `Failed to evaluate error expression: ${expression}.`,
                       result.error,
                       x
                     )
@@ -486,7 +493,7 @@ async function evaluateInternal(
       x => x === "-f",
       async () => {
         const { cursor, expression } = munch(args.slice(1));
-        const filtered = await filter(toExpressionString(expression), input);
+        const filtered = await filter(expression, input);
         return await evalShorthand(args.slice(cursor + 1), filtered, false);
       }
     ],
@@ -515,7 +522,7 @@ async function evaluateInternal(
         return await evalShorthand(
           args.slice(cursor + 1),
           await evalExpression(
-            toExpressionString(expression),
+            expression,
             input,
             args.slice(cursor + 1),
             isInitialInput
@@ -533,7 +540,7 @@ async function evaluateInternal(
       x => x === "-m",
       async () => {
         const { cursor, expression } = munch(args.slice(1));
-        const mapped = await flatMap(toExpressionString(expression), input);
+        const mapped = await flatMap(expression, input);
         return await evalShorthand(args.slice(cursor + 1), mapped, false);
       }
     ],
@@ -579,24 +586,23 @@ async function evaluateInternal(
     [
       x => x === "-r",
       async () => {
-        const { cursor, expression } = munch(args.slice(1));
-        return !(expression instanceof QuotedExpression)
+        const { cursor, expression, otherExpressions } = munch(
+          args.slice(1),
+          1
+        );
+        return typeof otherExpressions !== "undefined"
           ? await (async () => {
-              const initialValue = expression.slice(-1)[0];
-              const reduced = await reduce(
-                toExpressionString(expression.slice(0, -1)),
-                input,
-                initialValue
-              );
-              return await evalShorthand(
-                args.slice(cursor + 1),
-                Seq.of([reduced]),
-                false
-              );
+              const initialValue = otherExpressions[0];
+              return await (async () => {
+                const reduced = await reduce(expression, input, initialValue);
+                return await evalShorthand(
+                  args.slice(cursor + 1),
+                  Seq.of([reduced]),
+                  false
+                );
+              })();
             })()
-          : exception(
-              `A quoted expression cannot be used with the reduce option.`
-            );
+          : exception(`Failed to evaluate initial value expression.`);
       }
     ],
 
@@ -613,7 +619,7 @@ async function evaluateInternal(
               const result = await fn(await x.value, i);
               if (result instanceof EvalError) {
                 return new PipelineError(
-                  `basho failed to evaluate expression: ${expression}.`,
+                  `Failed to evaluate expression: ${expression}.`,
                   result.error,
                   x
                 );
@@ -647,7 +653,7 @@ async function evaluateInternal(
         return await evalShorthand(
           args.slice(cursor),
           await evalExpression(
-            toExpressionString(expression),
+            expression,
             input,
             args.slice(cursor),
             isInitialInput
@@ -665,19 +671,13 @@ async function evaluateInternal(
       evalFn: typeof evalShorthand
     ) => async () => {
       const { cursor, expression } = munch(args.slice(1));
-      const fn = await evalWithCatch(
-        `(x, i) => (${toExpressionString(expression)})`
-      );
+      const fn = await evalWithCatch(`(x, i) => (${expression})`);
       const newSeq = input.map(async (x, i) => {
         if (x instanceof PipelineValue) {
           const result = await fn(await x.value, i);
           printFn(
             result instanceof EvalError
-              ? new PipelineError(
-                  `basho failed to evaluate expression: ${expression}.`,
-                  result.error,
-                  x
-                )
+              ? `Failed to evaluate expression: ${expression}.`
               : result
           );
         }
