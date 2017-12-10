@@ -23,6 +23,7 @@ const options = [
   "-q",         //            quote expression as string
   "-p",         //            print
   "-r",         //            reduce
+  "-s",         //            seek/recall a named result
   "-t",         //            terminate evaluation
   "-w",         //            Same as log, but without the newline
   "--error",    //            Error handling
@@ -431,16 +432,16 @@ async function evaluateInternal(
       async () =>
         await evalShorthand(
           args.slice(2),
-          input.map(
-            x =>
-              new PipelineValue(
-                args[1].split(",").map(name => {
-                  const item = findNamedValue(name, x);
-                  return item instanceof PipelineValue ? item.value : item;
-                }),
-                x
-              )
-          ),
+          input.map(x => {
+            const streams = args[1].split(",");
+            return new PipelineValue(
+              streams.map(name => {
+                const item = findNamedValue(name, x);
+                return item instanceof PipelineValue ? item.value : item;
+              }),
+              x
+            );
+          }),
           false
         )
     ],
@@ -604,6 +605,25 @@ async function evaluateInternal(
             })()
           : exception(`Failed to evaluate initial value expression.`);
       }
+    ],
+
+    /* Seek a named result */
+    [
+      x => x === "-s",
+      async () =>
+        await evalShorthand(
+          args.slice(2),
+          input.map(x => {
+            return new PipelineValue(
+              (() => {
+                const item = findNamedValue(args[1], x);
+                return item instanceof PipelineValue ? item.value : item;
+              })(),
+              x
+            );
+          }),
+          false
+        )
     ],
 
     /* Terminate the pipeline */

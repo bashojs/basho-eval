@@ -381,6 +381,26 @@ describe("basho", () => {
     });
   });
 
+  it(`Seek a named result`, async () => {
+    const output = await evaluate([
+      "[10,20,30,40]",
+      "-j",
+      "x+1",
+      "-n",
+      "add1",
+      "-j",
+      "x+2",
+      "-n",
+      "add2",
+      "-s",
+      "add1"
+    ]);
+    (await toResult(output)).should.deepEqual({
+      mustPrint: true,
+      result: [11, 21, 31, 41]
+    });
+  });
+
   it(`Captures an error`, async () => {
     const output = await evaluate([
       "['a,b', 10, 'c,d']",
