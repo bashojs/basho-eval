@@ -184,6 +184,14 @@ describe("basho", () => {
     });
   });
 
+  it(`Handles expressions with quotes`, async () => {
+    const output = await evaluate([`["a,b", "c,d"]`, "-j", `x.split(",")`]);
+    (await toResult(output)).should.deepEqual({
+      mustPrint: true,
+      result: [["a", "b"], ["c", "d"]]
+    });
+  });
+
   it(`Filters an array`, async () => {
     const output = await evaluate(["[1,2,3,4]", "-f", "x > 2"]);
     (await toResult(output)).should.deepEqual({
