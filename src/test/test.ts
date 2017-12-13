@@ -434,6 +434,25 @@ describe("basho", () => {
     });
   });
 
+  it(`Recurses with multiple inputs`, async () => {
+    const output = await evaluate([
+      "[14, 20, 30]",
+      "-j",
+      "x+1",
+      "-n",
+      "add1",
+      "-j",
+      "x+2",
+      "-g",
+      "add1",
+      "x<30"
+    ]);
+    (await toResult(output)).should.deepEqual({
+      mustPrint: true,
+      result: [32, 32, 33]
+    });
+  });
+
   it(`Computes Fibonacci Series`, async () => {
     const output = await evaluate([
       "[[[0], 1]]",
