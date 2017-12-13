@@ -5,6 +5,7 @@ import { Seq, sequence } from "lazily-async";
 
 import exception from "./exception";
 import importModule = require("./import-module");
+import { currentId } from "async_hooks";
 
 const exec = promisify(child_process.exec);
 
@@ -15,6 +16,7 @@ const options = [
   "-c",         // n1,n2,n3   combine a named stages
   "-e",         //            shell command
   "-f",         //            filter
+  "-g",         // n, exp    recurse
   "-i",         //            import a file or module
   "-j",         //            JS expression
   "-l",         //            evaluate and log a value to console
@@ -392,21 +394,30 @@ export async function evaluate(
 ) {
   return await evaluateInternal(
     args,
+    [],
     Seq.of([]),
     mustPrint,
     onLog,
     onWrite,
-    true
+    true,
+    []
   );
 }
 
+type ExpressionStackEntry = {
+  name: string;
+  args: Array<string>;
+};
+
 async function evaluateInternal(
   args: Array<string>,
+  prevArgs: Array<string>,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
   onWrite: BashoLogFn,
-  isInitialInput: boolean
+  isInitialInput: boolean,
+  expressionStack: Array<ExpressionStackEntry>
 ): Promise<BashoEvaluationResult> {
   const cases: Array<[(arg: string) => boolean, () => Promise<any>]> = [
     /* Enumerate sequence into an array */
@@ -416,6 +427,7 @@ async function evaluateInternal(
         const items = await input.toArray();
         return await evalShorthand(
           args.slice(1),
+          args,
           Seq.of([
             new PipelineValue(
               items.map(x => (x instanceof PipelineValue ? x.value : x))
@@ -432,6 +444,7 @@ async function evaluateInternal(
       async () =>
         await evalShorthand(
           args.slice(2),
+          args,
           input.map(x => {
             const streams = args[1].split(",");
             return new PipelineValue(
@@ -453,6 +466,7 @@ async function evaluateInternal(
         const { cursor, expression } = munch(args.slice(1));
         return await evalShorthand(
           args.slice(cursor + 1),
+          args,
           await shellCmd(
             expression,
             input,
@@ -485,7 +499,7 @@ async function evaluateInternal(
             : x;
         });
 
-        return await evalShorthand(args.slice(cursor + 1), newSeq, false);
+        return await evalShorthand(args.slice(cursor + 1), args, newSeq, false);
       }
     ],
 
@@ -495,7 +509,61 @@ async function evaluateInternal(
       async () => {
         const { cursor, expression } = munch(args.slice(1));
         const filtered = await filter(expression, input);
-        return await evalShorthand(args.slice(cursor + 1), filtered, false);
+        return await evalShorthand(
+          args.slice(cursor + 1),
+          args,
+          filtered,
+          false
+        );
+      }
+    ],
+
+    /* Recurse/Goto */
+    [
+      x => x === "-g",
+      async () => {
+        const name = args[1];
+        const { cursor, expression } = munch(args.slice(2));
+        const recursePoint = expressionStack.find(e => e.name === name);
+        const fn = await evalWithCatch(`(x, i) => (${expression})`);
+        const newSeq = input.map(
+          async (x, i) =>
+            recursePoint
+              ? x instanceof PipelineValue
+                ? await (async () => {
+                    const predicateResult = await fn(await x.value, i);
+                    return predicateResult === true
+                      ? await (async () => {
+                          const recurseArgs = recursePoint.args.slice(
+                            0,
+                            recursePoint.args.length -
+                              (args.length - (cursor + 2))
+                          );
+                          const innerEvalResult = await evaluateInternal(
+                            recurseArgs,
+                            [],
+                            Seq.of([x]),
+                            mustPrint,
+                            onLog,
+                            onWrite,
+                            false,
+                            []
+                          );
+                          const results = await innerEvalResult.result.toArray();
+                          const result = results[0];
+                          return result instanceof PipelineValue
+                            ? new PipelineValue(result.value, x)
+                            : result;
+                        })()
+                      : x;
+                  })()
+                : x
+              : new PipelineError(
+                  `The expression ${name} was not found.`,
+                  new Error(`Missing expression ${name}.`)
+                )
+        );
+        return await evalShorthand(args.slice(cursor + 2), args, newSeq, false);
       }
     ],
 
@@ -506,11 +574,13 @@ async function evaluateInternal(
         evalImport(args[1], args[2]);
         return await evaluateInternal(
           args.slice(3),
+          args,
           input,
           mustPrint,
           onLog,
           onWrite,
-          isInitialInput
+          isInitialInput,
+          expressionStack
         );
       }
     ],
@@ -522,6 +592,7 @@ async function evaluateInternal(
         const { cursor, expression } = munch(args.slice(1));
         return await evalShorthand(
           args.slice(cursor + 1),
+          args,
           await evalExpression(
             expression,
             input,
@@ -534,7 +605,7 @@ async function evaluateInternal(
     ],
 
     /* Logging */
-    [x => x === "-l", getPrinter(onLog)(input, args, evalShorthand)],
+    [x => x === "-l", getPrinter(onLog)(input, args)],
 
     /* Flatmap */
     [
@@ -542,7 +613,7 @@ async function evaluateInternal(
       async () => {
         const { cursor, expression } = munch(args.slice(1));
         const mapped = await flatMap(expression, input);
-        return await evalShorthand(args.slice(cursor + 1), mapped, false);
+        return await evalShorthand(args.slice(cursor + 1), args, mapped, false);
       }
     ],
 
@@ -551,7 +622,16 @@ async function evaluateInternal(
       x => x === "-n",
       async () => {
         const newSeq = input.map(async (x, i) => x.clone(args[1]));
-        return await evalShorthand(args.slice(2), newSeq, false);
+        return await evaluateInternal(
+          args.slice(2),
+          args,
+          newSeq,
+          mustPrint,
+          onLog,
+          onWrite,
+          false,
+          expressionStack.concat({ name: args[1], args: prevArgs })
+        );
       }
     ],
 
@@ -561,11 +641,13 @@ async function evaluateInternal(
       async () =>
         await evaluateInternal(
           args.slice(1),
+          args,
           input,
           mustPrint,
           onLog,
           onWrite,
-          isInitialInput
+          isInitialInput,
+          expressionStack
         )
     ],
 
@@ -575,11 +657,13 @@ async function evaluateInternal(
       async () =>
         await evaluateInternal(
           args.slice(1),
+          args,
           input,
           false,
           onLog,
           onWrite,
-          isInitialInput
+          isInitialInput,
+          expressionStack
         )
     ],
 
@@ -598,6 +682,7 @@ async function evaluateInternal(
                 const reduced = await reduce(expression, input, initialValue);
                 return await evalShorthand(
                   args.slice(cursor + 1),
+                  args,
                   Seq.of([reduced]),
                   false
                 );
@@ -613,6 +698,7 @@ async function evaluateInternal(
       async () =>
         await evalShorthand(
           args.slice(2),
+          args,
           input.map(x => {
             return new PipelineValue(
               (() => {
@@ -656,6 +742,7 @@ async function evaluateInternal(
         }
         return await evalShorthand(
           args.slice(cursor + 1),
+          args,
           new Seq(asyncGenerator),
           false
         );
@@ -663,7 +750,7 @@ async function evaluateInternal(
     ],
 
     /* Writing */
-    [x => x === "-w", getPrinter(onWrite)(input, args, evalShorthand)],
+    [x => x === "-w", getPrinter(onWrite)(input, args)],
 
     /* Everything else as JS expressions */
     [
@@ -672,6 +759,7 @@ async function evaluateInternal(
         const { cursor, expression } = munch(args);
         return await evalShorthand(
           args.slice(cursor),
+          args,
           await evalExpression(
             expression,
             input,
@@ -685,11 +773,7 @@ async function evaluateInternal(
   ];
 
   function getPrinter(printFn: BashoLogFn) {
-    return (
-      input: Seq<PipelineItem>,
-      args: Array<string>,
-      evalFn: typeof evalShorthand
-    ) => async () => {
+    return (input: Seq<PipelineItem>, args: Array<string>) => async () => {
       const { cursor, expression } = munch(args.slice(1));
       const fn = await evalWithCatch(`(x, i) => (${expression})`);
       const newSeq = input.map(async (x, i) => {
@@ -705,6 +789,7 @@ async function evaluateInternal(
       });
       return await evalShorthand(
         args.slice(cursor + 1),
+        args,
         newSeq,
         isInitialInput
       );
@@ -713,16 +798,19 @@ async function evaluateInternal(
 
   async function evalShorthand(
     args: Array<string>,
+    prevArgs: Array<string>,
     input: Seq<PipelineItem>,
     isInitialInput: boolean
   ): Promise<BashoEvaluationResult> {
     return await evaluateInternal(
       args,
+      prevArgs,
       input,
       mustPrint,
       onLog,
       onWrite,
-      isInitialInput
+      isInitialInput,
+      expressionStack
     );
   }
 

@@ -8,21 +8,11 @@ It exports the PipelineError class and the evaluate() function.
 Usage looks like this:
 
 ```javascript
-it(`Creates a named result but does not seek`, async () => {
-  const output = await evaluate([
-    "[10,20,30,40]",
-    "-j",
-    "x+1",
-    "-j",
-    "x+2",
-    "-n",
-    "add2",
-    "-j",
-    "x+10"
-  ]);
+it(`Passes an object to a shell command`, async () => {
+  const output = await evaluate(["{ name: 'kai' }", "-e", "echo ${x.name}"]);
   (await toResult(output)).should.deepEqual({
     mustPrint: true,
-    result: [23, 33, 43, 53]
+    result: ["kai"]
   });
 });
 ```

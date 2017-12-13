@@ -414,4 +414,42 @@ describe("basho", () => {
       result: [["a", "b"], "skipped", ["c", "d"]]
     });
   });
+
+  it(`Recurses`, async () => {
+    const output = await evaluate([
+      "[20]",
+      "-j",
+      "x+1",
+      "-n",
+      "add1",
+      "-j",
+      "x+2",
+      "-g",
+      "add1",
+      "x<30"
+    ]);
+    (await toResult(output)).should.deepEqual({
+      mustPrint: true,
+      result: [32]
+    });
+  });
+
+  it(`Computes Fibonacci Series`, async () => {
+    const output = await evaluate([
+      "[[[0], 1]]",
+      "-j",
+      "[x[0].concat(x[1]), x[0].slice(-1)[0] + x[1]]",
+      "-n",
+      "fib",
+      "-g",
+      "fib",
+      "x[1]<300",
+      "-j",
+      "x[0]"
+    ]);
+    (await toResult(output)).should.deepEqual({
+      mustPrint: true,
+      result: [[0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233]]
+    });
+  });
 });
