@@ -1,12 +1,12 @@
 import path = require("path");
 import child_process = require("child_process");
-import promisify = require("nodefunc-promisify");
+import * as util from "util";
 import { Seq, sequence } from "lazily-async";
 
 import exception from "./exception";
 import importModule = require("./import-module");
 
-const exec = promisify(child_process.exec);
+const exec = util.promisify(child_process.exec);
 
 // prettier-ignore
 /* Options: */
@@ -179,9 +179,9 @@ async function shellCmd(
                 )
               ])
             : await (async () => {
-                const shellResult: string = await exec(cmd);
+                const { stdout } = await exec(cmd);
                 return Seq.of(
-                  shellResult
+                  stdout
                     .split("\n")
                     .filter(x => x !== "")
                     .map(x => x.replace(/\n$/, ""))
@@ -210,8 +210,8 @@ async function shellCmd(
                         typeof value === "string" ? shellEscape(value) : value,
                         i
                       );
-                      const shellResult: string = await exec(cmd);
-                      const items = shellResult
+                      const { stdout } = await exec(cmd);
+                      const items = stdout
                         .split("\n")
                         .filter(x => x !== "")
                         .map(x => x.replace(/\n$/, ""));
