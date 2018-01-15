@@ -4,7 +4,7 @@ import * as util from "util";
 import { Seq, sequence } from "lazily-async";
 
 import exception from "./exception";
-import importModule = require("./import-module");
+import importModule from "./import-module";
 import { currentId } from "async_hooks";
 
 const exec = util.promisify(child_process.exec);
@@ -233,13 +233,13 @@ async function shellCmd(
       })();
 }
 
-function evalImport(filename: string, alias: string): void {
+async function evalImport(filename: string, alias: string) {
   const isRelative =
     filename.startsWith("./") ||
     filename.startsWith("../") ||
     filename.endsWith(".js");
   const filePath = isRelative ? path.join(process.cwd(), filename) : filename;
-  importModule(filePath, alias, isRelative);
+  await importModule(filePath, alias, isRelative);
 }
 
 async function filter(
@@ -570,7 +570,7 @@ async function evaluateInternal(
     [
       x => x === "-i",
       async () => {
-        evalImport(args[1], args[2]);
+        await evalImport(args[1], args[2]);
         return await evaluateInternal(
           args.slice(3),
           args,
