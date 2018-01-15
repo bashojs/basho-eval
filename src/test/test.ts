@@ -3,7 +3,6 @@ import "mocha";
 import "should";
 import child_process from "child_process";
 import path from "path";
-import promisify from "nodefunc-promisify";
 import { evaluate, BashoEvaluationResult, PipelineValue } from "../basho-eval";
 
 function execute(cmd: string): any {

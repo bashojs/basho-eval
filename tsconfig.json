@@ -10,11 +10,7 @@
     "allowSyntheticDefaultImports": true,
     "sourceMap": true,
     "strict": true,
-    "typeRoots": ["./node_modules/@types", "./types"],
-    "types": [
-      "node",
-      "nodefunc-promisify"
-    ]
+    "types": ["node"]
   },
   "include": ["./src/**/*"]
 }
