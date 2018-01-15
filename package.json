@@ -1,6 +1,6 @@
 {
   "name": "basho-eval",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "author": "Isotropy Team<isotropy@agilehead.com>",
   "contributors": ["Jeswin Kumar<jeswinpk@agilehead.com>"],
   "scripts": {

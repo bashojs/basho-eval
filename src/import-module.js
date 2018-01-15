@@ -5,7 +5,7 @@ module.exports = function(filePath, alias, isRelative) {
     global[alias] = require(filePath);
   } else {
     try {
-      global[alias] = require(path.join(process.cwd(), filePath));
+      global[alias] = require(path.join(process.cwd(), "node_modules", filePath));
     } 
     catch (ex) {
       global[alias] = require(filePath);      
