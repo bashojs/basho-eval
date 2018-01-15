@@ -253,19 +253,35 @@ describe("basho", () => {
     });
   });
 
-  it(`Calls a node module`, async () => {
+  it(`Calls a node module (global)`, async () => {
     const output = await evaluate([
       `["/a", "b", "c"]`,
       "-a",
       "-i",
       "path",
-      "path",
+      "pathMod",
       "-j",
-      "path.join.apply(path, x)"
+      "pathMod.join.apply(pathMod, x)"
     ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
       result: ["/a/b/c"]
+    });
+  });
+
+  it(`Calls a node module (working dir)`, async () => {
+    const output = await evaluate([
+      `["/a", "b", "c"]`,
+      "-a",
+      "-i",
+      "left-pad",
+      "leftPad",
+      "-j",
+      "leftPad(17, 5, 0)"
+    ]);
+    (await toResult(output)).should.deepEqual({
+      mustPrint: true,
+      result: ["00017"]
     });
   });
 

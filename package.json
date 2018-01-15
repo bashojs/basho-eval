@@ -1,6 +1,6 @@
 {
   "name": "basho-eval",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "author": "Isotropy Team<isotropy@agilehead.com>",
   "contributors": ["Jeswin Kumar<jeswinpk@agilehead.com>"],
   "scripts": {
@@ -17,7 +17,8 @@
     "@types/node": "^8.0.57",
     "@types/should": "^11.2.0",
     "mocha": "*",
-    "should": "*"
+    "should": "*",
+    "left-pad": "1.2.0"
   },
   "license": "MIT"
 }

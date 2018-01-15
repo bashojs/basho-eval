@@ -234,13 +234,12 @@ async function shellCmd(
 }
 
 function evalImport(filename: string, alias: string): void {
-  const filePath =
+  const isRelative =
     filename.startsWith("./") ||
     filename.startsWith("../") ||
-    filename.endsWith(".js")
-      ? path.join(process.cwd(), filename)
-      : filename;
-  importModule(filePath, alias);
+    filename.endsWith(".js");
+  const filePath = isRelative ? path.join(process.cwd(), filename) : filename;
+  importModule(filePath, alias, isRelative);
 }
 
 async function filter(
