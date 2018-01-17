@@ -1,3 +1,3 @@
 rm -rf dist
-cp -r src dist
 tsc
+cp src/test/square.js dist/test/
