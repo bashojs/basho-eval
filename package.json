@@ -10,11 +10,11 @@
   "main": "dist/basho-eval.js",
   "types": "dist/basho-eval.d.ts",
   "dependencies": {
+    "@types/node": "^8.0.57",
     "lazily-async": "^0.0.31"
   },
   "devDependencies": {
     "@types/mocha": "^2.2.44",
-    "@types/node": "^8.0.57",
     "@types/should": "^11.2.0",
     "mocha": "*",
     "should": "*",
