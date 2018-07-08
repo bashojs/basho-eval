@@ -387,6 +387,7 @@ export type BashoEvaluationResult = {
 
 export async function evaluate(
   args: Array<string>,
+  pipedValues: Array<string> = [],
   mustPrint: boolean = true,
   onLog: BashoLogFn = () => {},
   onWrite: BashoLogFn = () => {}
@@ -394,11 +395,11 @@ export async function evaluate(
   return await evaluateInternal(
     args,
     [],
-    Seq.of([]),
+    Seq.of(pipedValues.map(x => new PipelineValue(x))),
     mustPrint,
     onLog,
     onWrite,
-    true,
+    pipedValues.length === 0,
     []
   );
 }

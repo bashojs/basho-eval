@@ -138,10 +138,19 @@ describe("basho", () => {
     });
   });
 
+  it(`Accepts an array of initial values`, async () => {
+    const output = await evaluate(['x+1'], ["a", "b", "c", "d"]);
+    (await toResult(output)).should.deepEqual({
+      mustPrint: true,
+      result: ['a1', 'b1', 'c1', 'd1']
+    });
+  });
+
   it(`Evals and logs an expression`, async () => {
     resetLogMessages();
     const output = await evaluate(
       ["[1,2,3,4]", "-l", "x+10", "-j", "x**2"],
+      [],
       true,
       onLog
     );
@@ -156,6 +165,7 @@ describe("basho", () => {
     resetWriteMessages();
     const output = await evaluate(
       ["[1,2,3,4]", "-w", "x+10", "-j", "x**2"],
+      [],
       true,
       onLog,
       onWrite
