@@ -5,7 +5,6 @@ import { Seq, sequence } from "lazily-async";
 
 import exception from "./exception";
 import importModule from "./import-module";
-import { currentId } from "async_hooks";
 
 const exec = util.promisify(child_process.exec);
 
