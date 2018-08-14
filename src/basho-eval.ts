@@ -604,7 +604,7 @@ async function evaluateInternal(
     ],
 
     /* Logging */
-    [x => x === "-l", getPrinter(onLog)(input, args)],
+    [x => x === "-l", await getPrinter(onLog)(input, args)],
 
     /* Flatmap */
     [
@@ -749,7 +749,7 @@ async function evaluateInternal(
     ],
 
     /* Writing */
-    [x => x === "-w", getPrinter(onWrite)(input, args)],
+    [x => x === "-w", await getPrinter(onWrite)(input, args)],
 
     /* Everything else as JS expressions */
     [
