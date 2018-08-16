@@ -1,12 +1,11 @@
 {
   "name": "basho-eval",
-  "version": "0.0.29",
+  "version": "0.0.30",
   "author": "Isotropy Team<isotropy@agilehead.com>",
   "contributors": [
     "Jeswin Kumar<jeswinpk@agilehead.com>"
   ],
   "scripts": {
-    "build": "./build.sh",
     "test": "./build.sh && mocha dist/test/test.js"
   },
   "main": "dist/basho-eval.js",
