@@ -1,6 +1,6 @@
 {
   "name": "basho-eval",
-  "version": "0.0.30",
+  "version": "0.0.31",
   "author": "Isotropy Team<isotropy@agilehead.com>",
   "contributors": [
     "Jeswin Kumar<jeswinpk@agilehead.com>"
@@ -8,8 +8,8 @@
   "scripts": {
     "test": "./build.sh && mocha dist/test/test.js"
   },
-  "main": "dist/basho-eval.js",
-  "types": "dist/basho-eval.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "dependencies": {
     "@types/node": "^10.7.1",
     "lazily-async": "^0.0.32"
