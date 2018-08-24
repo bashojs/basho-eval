@@ -1,11 +1,12 @@
 {
   "name": "basho-eval",
-  "version": "0.0.32",
+  "version": "0.0.33",
   "author": "Isotropy Team<isotropy@agilehead.com>",
   "contributors": [
     "Jeswin Kumar<jeswinpk@agilehead.com>"
   ],
   "scripts": {
+    "transpile": "./build.sh",
     "test": "./build.sh && mocha dist/test/test.js"
   },
   "main": "dist/index.js",

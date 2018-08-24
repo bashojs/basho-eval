@@ -223,7 +223,8 @@ async function shellCmd(
                     } catch (ex) {
                       return new PipelineError(
                         `Failed to execute shell command: ${template}`,
-                        ex
+                        ex,
+                        x
                       );
                     }
                   })()
@@ -559,7 +560,8 @@ async function evaluateInternal(
                 : x
               : new PipelineError(
                   `The expression ${name} was not found.`,
-                  new Error(`Missing expression ${name}.`)
+                  new Error(`Missing expression ${name}.`),
+                  x
                 )
         );
         return await evalShorthand(args.slice(cursor + 2), args, newSeq, false);

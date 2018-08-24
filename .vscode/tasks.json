@@ -5,8 +5,8 @@
   "tasks": [
     {
       "type": "npm",
-      "label": "build",
-      "script": "build",
+      "label": "transpile",
+      "script": "transpile",
       "group": {
         "kind": "build",
         "isDefault": true

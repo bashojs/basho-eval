@@ -138,10 +138,10 @@ describe("basho", () => {
   });
 
   it(`Accepts an array of initial values`, async () => {
-    const output = await evaluate(['x+1'], ["a", "b", "c", "d"]);
+    const output = await evaluate(["x+1"], ["a", "b", "c", "d"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: ['a1', 'b1', 'c1', 'd1']
+      result: ["a1", "b1", "c1", "d1"]
     });
   });
 
