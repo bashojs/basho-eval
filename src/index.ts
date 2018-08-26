@@ -275,11 +275,13 @@ async function flatMap(
           ? await (async () => {
               const result: Array<any> | EvalError = await fn(await x.value, i);
               return result instanceof EvalError
-                ? new PipelineError(
-                    `Failed to evaluate expression: ${exp}.`,
-                    result.error,
-                    x
-                  )
+                ? [
+                    new PipelineError(
+                      `Failed to evaluate expression: ${exp}.`,
+                      result.error,
+                      x
+                    ) as PipelineItem
+                  ]
                 : result.map((r: any) => new PipelineValue(r, x));
             })()
           : exception(`Invalid item ${x} in pipeline.`)
