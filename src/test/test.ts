@@ -341,7 +341,7 @@ describe("basho", () => {
     });
   });
 
-  it(`Can use a constant in a JS Expression`, async () => {
+  it(`Can use a template expression in a JS Expression`, async () => {
     const output = await evaluate(["[10, 11, 12]", "-d", "add1", "x+1", "-u", "${k.add1}+1"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
@@ -349,7 +349,7 @@ describe("basho", () => {
     });
   });
 
-  it(`Can use a constant in a Shell Command`, async () => {
+  it(`Can use a template expression in a Shell Command`, async () => {
     const output = await evaluate(["[10, 11, 12]", "-d", "ECHO_CMD", "echo", "-e", "${k.ECHO_CMD} N${x}"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
