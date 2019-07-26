@@ -341,7 +341,7 @@ describe("basho", () => {
     });
   });
 
-  it(`Can use a template expression in a JS Expression`, async () => {
+  it(`Can use a named expression in a JS Expression`, async () => {
     const output = await evaluate([
       "[10, 11, 12]",
       "-d",
@@ -356,7 +356,25 @@ describe("basho", () => {
     });
   });
 
-  it(`Can use a template expression in a Shell Command`, async () => {
+  it(`Can use a named expression in a subsequent named expression`, async () => {
+    const output = await evaluate([
+      "[10, 11, 12]",
+      "-d",
+      "multiplier",
+      "100",
+      "-d",
+      "multiply",
+      "x => x * k.multiplier",
+      "-j",
+      "k.multiply(x)"
+    ]);
+    (await toResult(output)).should.deepEqual({
+      mustPrint: true,
+      result: [1000, 1100, 1200]
+    });
+  });
+
+  it(`Can use a named expression in a Shell Command`, async () => {
     const output = await evaluate([
       "[10, 11, 12]",
       "-d",

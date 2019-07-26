@@ -481,7 +481,7 @@ async function evaluateInternal(
       x => x === "-d",
       async () => {
         const { cursor, expression } = munch(args.slice(2));
-        constants[args[1]] = eval(expression);
+        constants[args[1]] = eval(`k => ${expression}`)(constants);
         evalWithCatch(expression, constants);
         return await evalShorthand(
           args.slice(cursor + 2),
