@@ -249,7 +249,7 @@ describe("basho", () => {
   it(`Calls a function in an external file`, async () => {
     const output = await evaluate([
       "10",
-      "-i",
+      "--import",
       "./dist/test/square.js",
       "sqr",
       "-j",
@@ -265,7 +265,7 @@ describe("basho", () => {
     const output = await evaluate([
       `["/a", "b", "c"]`,
       "-a",
-      "-i",
+      "--import",
       "path",
       "pathMod",
       "-j",
@@ -281,7 +281,7 @@ describe("basho", () => {
     const output = await evaluate([
       `["/a", "b", "c"]`,
       "-a",
-      "-i",
+      "--import",
       "left-pad",
       "leftPad",
       "-j",
@@ -335,6 +335,22 @@ describe("basho", () => {
 
   it(`Passes an array to a shell command`, async () => {
     const output = await evaluate(["[10, 11, 12]", "-e", "echo N${x}"]);
+    (await toResult(output)).should.deepEqual({
+      mustPrint: true,
+      result: ["N10", "N11", "N12"]
+    });
+  });
+
+  it(`Can use a constant in a JS Expression`, async () => {
+    const output = await evaluate(["[10, 11, 12]", "-d", "add1", "x+1", "-u", "${k.add1}+1"]);
+    (await toResult(output)).should.deepEqual({
+      mustPrint: true,
+      result: [12, 13, 14]
+    });
+  });
+
+  it(`Can use a constant in a Shell Command`, async () => {
+    const output = await evaluate(["[10, 11, 12]", "-d", "ECHO_CMD", "echo", "-e", "${k.ECHO_CMD} N${x}"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
       result: ["N10", "N11", "N12"]

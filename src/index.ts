@@ -13,10 +13,11 @@ const exec = util.promisify(child_process.exec);
 const options = [
   "-a",         //            treat array as a whole
   "-c",         // n1,n2,n3   combine a named stages
+  "-d",         //            define an expression template
   "-e",         //            shell command
   "-f",         //            filter
   "-g",         // n, exp    recurse
-  "-i",         //            import a file or module
+  "--import",   //            import a file or module
   "-j",         //            JS expression
   "-l",         //            evaluate and log a value to console
   "-m",         //            flatMap
@@ -26,6 +27,7 @@ const options = [
   "-r",         //            reduce
   "-s",         //            seek/recall a named result
   "-t",         //            terminate evaluation
+  "-u",         //            Expand and use a template expression
   "-w",         //            Same as log, but without the newline
   "--error",    //            Error handling
 ];
@@ -91,6 +93,13 @@ class EvalError {
   }
 }
 
+function evaluableFromShellExpression(
+  exp: string,
+  constants: Constants
+): string {
+  return eval(`k => ${exp}`)(constants);
+}
+
 async function evalWithCatch(
   exp: string
 ): Promise<(...args: Array<any>) => any> {
@@ -118,6 +127,7 @@ function shellEscape(str: string): string {
 
 async function evalExpression(
   exp: string,
+  constants: Constants,
   input: Seq<PipelineItem>,
   nextArgs: Array<string>,
   isInitialInput: boolean
@@ -135,8 +145,8 @@ async function evalExpression(
               )
             ])
           : Array.isArray(input)
-            ? Seq.of(input.map(i => new PipelineValue(i)))
-            : Seq.of([new PipelineValue(input)]);
+          ? Seq.of(input.map(i => new PipelineValue(i)))
+          : Seq.of([new PipelineValue(input)]);
       })()
     : await (async () => {
         const code = `async (x, i) => (${exp})`;
@@ -145,29 +155,32 @@ async function evalExpression(
             x instanceof PipelineError
               ? x
               : x instanceof PipelineValue
-                ? await (async () => {
-                    const fn = await evalWithCatch(code);
-                    const result = await fn(await x.value, i);
-                    return result instanceof EvalError
-                      ? new PipelineError(
-                          `Failed to evaluate expression: ${exp}.`,
-                          result.error,
-                          x
-                        )
-                      : new PipelineValue(result, x);
-                  })()
-                : exception(`Invalid item ${x} in pipeline.`)
+              ? await (async () => {
+                  const fn = await evalWithCatch(code);
+                  const result = await fn(await x.value, i);
+                  return result instanceof EvalError
+                    ? new PipelineError(
+                        `Failed to evaluate expression: ${exp}.`,
+                        result.error,
+                        x
+                      )
+                    : new PipelineValue(result, x);
+                })()
+              : exception(`Invalid item ${x} in pipeline.`)
         );
       })();
 }
 
 async function shellCmd(
   template: string,
+  constants: Constants,
   input: Seq<PipelineItem>,
   nextArgs: Array<string>,
   isInitialInput: boolean
 ): Promise<Seq<PipelineItem>> {
-  const fn = await evalWithCatch(`async (x, i) => \`${template}\``);
+  const fn = await evalWithCatch(
+    evaluableFromShellExpression(`(x, i) => \`${template}\``, constants)
+  );
   return isInitialInput
     ? await (async () => {
         try {
@@ -204,31 +217,31 @@ async function shellCmd(
             x instanceof PipelineError
               ? x
               : x instanceof PipelineValue
-                ? await (async () => {
-                    try {
-                      const value = await x.value;
-                      const cmd = await fn(
-                        typeof value === "string" ? shellEscape(value) : value,
-                        i
-                      );
-                      const { stdout } = await exec(cmd);
-                      const items = stdout
-                        .split("\n")
-                        .filter(x => x !== "")
-                        .map(x => x.replace(/\n$/, ""));
-                      return new PipelineValue(
-                        items.length === 1 ? items[0] : items,
-                        x
-                      );
-                    } catch (ex) {
-                      return new PipelineError(
-                        `Failed to execute shell command: ${template}`,
-                        ex,
-                        x
-                      );
-                    }
-                  })()
-                : exception(`Invalid item ${x} in pipeline.`)
+              ? await (async () => {
+                  try {
+                    const value = await x.value;
+                    const cmd = await fn(
+                      typeof value === "string" ? shellEscape(value) : value,
+                      i
+                    );
+                    const { stdout } = await exec(cmd);
+                    const items = stdout
+                      .split("\n")
+                      .filter(x => x !== "")
+                      .map(x => x.replace(/\n$/, ""));
+                    return new PipelineValue(
+                      items.length === 1 ? items[0] : items,
+                      x
+                    );
+                  } catch (ex) {
+                    return new PipelineError(
+                      `Failed to execute shell command: ${template}`,
+                      ex,
+                      x
+                    );
+                  }
+                })()
+              : exception(`Invalid item ${x} in pipeline.`)
         );
       })();
 }
@@ -244,6 +257,7 @@ async function evalImport(filename: string, alias: string) {
 
 async function filter(
   exp: string,
+  constants: Constants,
   input: Seq<PipelineItem>
 ): Promise<Seq<PipelineItem>> {
   const code = `async (x, i) => (${exp})`;
@@ -253,43 +267,44 @@ async function filter(
       x instanceof PipelineError
         ? true
         : x instanceof PipelineValue
-          ? await (async () => {
-              const result = await fn(await x.value, i);
-              return result instanceof EvalError ? true : result;
-            })()
-          : exception(`Invalid item ${x} in pipeline.`)
+        ? await (async () => {
+            const result = await fn(await x.value, i);
+            return result instanceof EvalError ? true : result;
+          })()
+        : exception(`Invalid item ${x} in pipeline.`)
   );
 }
 
 async function flatMap(
   exp: string,
+  constants: Constants,
   input: Seq<PipelineItem>
 ): Promise<Seq<PipelineItem>> {
   const code = `async (x, i) => (${exp})`;
   const fn = await evalWithCatch(code);
-  return input.flatMap(
-    async (x, i) =>
-      x instanceof PipelineError
-        ? [x]
-        : x instanceof PipelineValue
-          ? await (async () => {
-              const result: Array<any> | EvalError = await fn(await x.value, i);
-              return result instanceof EvalError
-                ? [
-                    new PipelineError(
-                      `Failed to evaluate expression: ${exp}.`,
-                      result.error,
-                      x
-                    ) as PipelineItem
-                  ]
-                : result.map((r: any) => new PipelineValue(r, x));
-            })()
-          : exception(`Invalid item ${x} in pipeline.`)
+  return input.flatMap(async (x, i) =>
+    x instanceof PipelineError
+      ? [x]
+      : x instanceof PipelineValue
+      ? await (async () => {
+          const result: Array<any> | EvalError = await fn(await x.value, i);
+          return result instanceof EvalError
+            ? [
+                new PipelineError(
+                  `Failed to evaluate expression: ${exp}.`,
+                  result.error,
+                  x
+                ) as PipelineItem
+              ]
+            : result.map((r: any) => new PipelineValue(r, x));
+        })()
+      : exception(`Invalid item ${x} in pipeline.`)
   );
 }
 
 async function reduce(
   exp: string,
+  constants: Constants,
   input: Seq<PipelineItem>,
   initialValueExp: string
 ): Promise<PipelineItem> {
@@ -310,19 +325,19 @@ async function reduce(
             acc instanceof PipelineError
               ? acc
               : x instanceof PipelineError
-                ? x
-                : x instanceof PipelineValue
-                  ? await (async () => {
-                      const result = await fn(acc, await x.value, i);
-                      return result instanceof EvalError
-                        ? new PipelineError(
-                            `Failed to evaluate expression: ${exp}.`,
-                            result.error,
-                            x
-                          )
-                        : result;
-                    })()
-                  : exception(`Invalid item ${x} in pipeline.`),
+              ? x
+              : x instanceof PipelineValue
+              ? await (async () => {
+                  const result = await fn(acc, await x.value, i);
+                  return result instanceof EvalError
+                    ? new PipelineError(
+                        `Failed to evaluate expression: ${exp}.`,
+                        result.error,
+                        x
+                      )
+                    : result;
+                })()
+              : exception(`Invalid item ${x} in pipeline.`),
           initialValue
         );
   return output instanceof PipelineError ? output : new PipelineValue(output);
@@ -394,9 +409,11 @@ export async function evaluate(
   onLog: BashoLogFn = () => {},
   onWrite: BashoLogFn = () => {}
 ) {
+  const constants: Constants = {};
   return await evaluateInternal(
     args,
     [],
+    constants,
     Seq.of(pipedValues.map(x => new PipelineValue(x))),
     mustPrint,
     onLog,
@@ -411,9 +428,14 @@ type ExpressionStackEntry = {
   args: Array<string>;
 };
 
+type Constants = {
+  [key: string]: string;
+};
+
 async function evaluateInternal(
   args: Array<string>,
   prevArgs: Array<string>,
+  constants: Constants,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -430,6 +452,7 @@ async function evaluateInternal(
         return await evalShorthand(
           args.slice(1),
           args,
+          constants,
           Seq.of([
             new PipelineValue(
               items.map(x => (x instanceof PipelineValue ? x.value : x))
@@ -447,6 +470,7 @@ async function evaluateInternal(
         await evalShorthand(
           args.slice(2),
           args,
+          constants,
           input.map(x => {
             const streams = args[1].split(",");
             return new PipelineValue(
@@ -461,6 +485,22 @@ async function evaluateInternal(
         )
     ],
 
+    /* Define a constant */
+    [
+      x => x === "-d",
+      async () => {
+        const { cursor, expression } = munch(args.slice(2));
+        constants[args[1]] = expression;
+        return await evalShorthand(
+          args.slice(cursor + 2),
+          args,
+          constants,
+          input,
+          false
+        );
+      }
+    ],
+
     /* Execute shell command */
     [
       x => x === "-e",
@@ -469,8 +509,10 @@ async function evaluateInternal(
         return await evalShorthand(
           args.slice(cursor + 1),
           args,
+          constants,
           await shellCmd(
             expression,
+            constants,
             input,
             args.slice(cursor + 1),
             isInitialInput
@@ -501,7 +543,13 @@ async function evaluateInternal(
             : x;
         });
 
-        return await evalShorthand(args.slice(cursor + 1), args, newSeq, false);
+        return await evalShorthand(
+          args.slice(cursor + 1),
+          args,
+          constants,
+          newSeq,
+          false
+        );
       }
     ],
 
@@ -510,10 +558,11 @@ async function evaluateInternal(
       x => x === "-f",
       async () => {
         const { cursor, expression } = munch(args.slice(1));
-        const filtered = await filter(expression, input);
+        const filtered = await filter(expression, constants, input);
         return await evalShorthand(
           args.slice(cursor + 1),
           args,
+          constants,
           filtered,
           false
         );
@@ -528,56 +577,63 @@ async function evaluateInternal(
         const { cursor, expression } = munch(args.slice(2));
         const recursePoint = expressionStack.find(e => e.name === name);
         const fn = await evalWithCatch(`(x, i) => (${expression})`);
-        const newSeq = input.map(
-          async (x, i) =>
-            recursePoint
-              ? x instanceof PipelineValue
-                ? await (async () => {
-                    const predicateResult = await fn(await x.value, i);
-                    return predicateResult === true
-                      ? await (async () => {
-                          const recurseArgs = recursePoint.args.slice(
-                            0,
-                            recursePoint.args.length -
-                              (args.length - (cursor + 2))
-                          );
-                          const innerEvalResult = await evaluateInternal(
-                            recurseArgs,
-                            [],
-                            Seq.of([x]),
-                            mustPrint,
-                            onLog,
-                            onWrite,
-                            false,
-                            []
-                          );
-                          const results = await innerEvalResult.result.toArray();
-                          const result = results[0];
-                          return result instanceof PipelineValue
-                            ? new PipelineValue(result.value, x)
-                            : result;
-                        })()
-                      : x;
-                  })()
-                : x
-              : new PipelineError(
-                  `The expression ${name} was not found.`,
-                  new Error(`Missing expression ${name}.`),
-                  x
-                )
+        const newSeq = input.map(async (x, i) =>
+          recursePoint
+            ? x instanceof PipelineValue
+              ? await (async () => {
+                  const predicateResult = await fn(await x.value, i);
+                  return predicateResult === true
+                    ? await (async () => {
+                        const recurseArgs = recursePoint.args.slice(
+                          0,
+                          recursePoint.args.length -
+                            (args.length - (cursor + 2))
+                        );
+                        const innerEvalResult = await evaluateInternal(
+                          recurseArgs,
+                          [],
+                          constants,
+                          Seq.of([x]),
+                          mustPrint,
+                          onLog,
+                          onWrite,
+                          false,
+                          []
+                        );
+                        const results = await innerEvalResult.result.toArray();
+                        const result = results[0];
+                        return result instanceof PipelineValue
+                          ? new PipelineValue(result.value, x)
+                          : result;
+                      })()
+                    : x;
+                })()
+              : x
+            : new PipelineError(
+                `The expression ${name} was not found.`,
+                new Error(`Missing expression ${name}.`),
+                x
+              )
         );
-        return await evalShorthand(args.slice(cursor + 2), args, newSeq, false);
+        return await evalShorthand(
+          args.slice(cursor + 2),
+          args,
+          constants,
+          newSeq,
+          false
+        );
       }
     ],
 
     /* Named Export */
     [
-      x => x === "-i",
+      x => x === "--import",
       async () => {
         await evalImport(args[1], args[2]);
         return await evaluateInternal(
           args.slice(3),
           args,
+          constants,
           input,
           mustPrint,
           onLog,
@@ -596,8 +652,10 @@ async function evaluateInternal(
         return await evalShorthand(
           args.slice(cursor + 1),
           args,
+          constants,
           await evalExpression(
             expression,
+            constants,
             input,
             args.slice(cursor + 1),
             isInitialInput
@@ -615,8 +673,14 @@ async function evaluateInternal(
       x => x === "-m",
       async () => {
         const { cursor, expression } = munch(args.slice(1));
-        const mapped = await flatMap(expression, input);
-        return await evalShorthand(args.slice(cursor + 1), args, mapped, false);
+        const mapped = await flatMap(expression, constants, input);
+        return await evalShorthand(
+          args.slice(cursor + 1),
+          args,
+          constants,
+          mapped,
+          false
+        );
       }
     ],
 
@@ -628,6 +692,7 @@ async function evaluateInternal(
         return await evaluateInternal(
           args.slice(2),
           args,
+          constants,
           newSeq,
           mustPrint,
           onLog,
@@ -645,6 +710,7 @@ async function evaluateInternal(
         await evaluateInternal(
           args.slice(1),
           args,
+          constants,
           input,
           mustPrint,
           onLog,
@@ -661,6 +727,7 @@ async function evaluateInternal(
         await evaluateInternal(
           args.slice(1),
           args,
+          constants,
           input,
           false,
           onLog,
@@ -682,10 +749,16 @@ async function evaluateInternal(
           ? await (async () => {
               const initialValue = otherExpressions[0];
               return await (async () => {
-                const reduced = await reduce(expression, input, initialValue);
+                const reduced = await reduce(
+                  expression,
+                  constants,
+                  input,
+                  initialValue
+                );
                 return await evalShorthand(
                   args.slice(cursor + 1),
                   args,
+                  constants,
                   Seq.of([reduced]),
                   false
                 );
@@ -702,6 +775,7 @@ async function evaluateInternal(
         await evalShorthand(
           args.slice(2),
           args,
+          constants,
           input.map(x => {
             return new PipelineValue(
               (() => {
@@ -746,7 +820,30 @@ async function evaluateInternal(
         return await evalShorthand(
           args.slice(cursor + 1),
           args,
+          constants,
           new Seq(asyncGenerator),
+          false
+        );
+      }
+    ],
+
+    /* Recall and use the expression */
+    [
+      x => x === "-u",
+      async function() {
+        const { cursor, expression } = munch(args.slice(1));
+        const expandedExpression = eval(`k => \`${expression}\``)(constants);
+        return await evalShorthand(
+          args.slice(cursor + 1),
+          args,
+          constants,
+          await evalExpression(
+            expandedExpression,
+            constants,
+            input,
+            args.slice(cursor + 1),
+            isInitialInput
+          ),
           false
         );
       }
@@ -763,8 +860,10 @@ async function evaluateInternal(
         return await evalShorthand(
           args.slice(cursor),
           args,
+          constants,
           await evalExpression(
             expression,
+            constants,
             input,
             args.slice(cursor),
             isInitialInput
@@ -793,6 +892,7 @@ async function evaluateInternal(
       return await evalShorthand(
         args.slice(cursor + 1),
         args,
+        constants,
         newSeq,
         isInitialInput
       );
@@ -802,12 +902,14 @@ async function evaluateInternal(
   async function evalShorthand(
     args: Array<string>,
     prevArgs: Array<string>,
+    constants: Constants,
     input: Seq<PipelineItem>,
     isInitialInput: boolean
   ): Promise<BashoEvaluationResult> {
     return await evaluateInternal(
       args,
       prevArgs,
+      constants,
       input,
       mustPrint,
       onLog,
