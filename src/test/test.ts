@@ -34,8 +34,8 @@ function onWrite(msg: string): void {
 async function toResult(
   output: BashoEvaluationResult
 ): Promise<{ mustPrint: boolean; result: Array<any> }> {
-  const result = (await output.result.toArray()).map(
-    x => (x instanceof PipelineValue ? x.value : x)
+  const result = (await output.result.toArray()).map(x =>
+    x instanceof PipelineValue ? x.value : x
   );
   return { mustPrint: output.mustPrint, result };
 }
@@ -342,15 +342,29 @@ describe("basho", () => {
   });
 
   it(`Can use a template expression in a JS Expression`, async () => {
-    const output = await evaluate(["[10, 11, 12]", "-d", "add1", "x+1", "-u", "${k.add1}+1"]);
+    const output = await evaluate([
+      "[10, 11, 12]",
+      "-d",
+      "add1",
+      "x=>x+1",
+      "-j",
+      "k.add1(x)"
+    ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [12, 13, 14]
+      result: [11, 12, 13]
     });
   });
 
   it(`Can use a template expression in a Shell Command`, async () => {
-    const output = await evaluate(["[10, 11, 12]", "-d", "ECHO_CMD", "echo", "-e", "${k.ECHO_CMD} N${x}"]);
+    const output = await evaluate([
+      "[10, 11, 12]",
+      "-d",
+      "ECHO_CMD",
+      "'echo'",
+      "-e",
+      "${k.ECHO_CMD} N${x}"
+    ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
       result: ["N10", "N11", "N12"]

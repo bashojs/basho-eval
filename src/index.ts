@@ -13,7 +13,7 @@ const exec = util.promisify(child_process.exec);
 const options = [
   "-a",         //            treat array as a whole
   "-c",         // n1,n2,n3   combine a named stages
-  "-d",         //            define an expression template
+  "-d",         //            define an reusable expression
   "-e",         //            shell command
   "-f",         //            filter
   "-g",         // n, exp    recurse
@@ -27,7 +27,6 @@ const options = [
   "-r",         //            reduce
   "-s",         //            seek/recall a named result
   "-t",         //            terminate evaluation
-  "-u",         //            Expand and use a template expression
   "-w",         //            Same as log, but without the newline
   "--error",    //            Error handling
 ];
@@ -93,18 +92,12 @@ class EvalError {
   }
 }
 
-function evaluableFromShellExpression(
+async function evalWithCatch(
   exp: string,
   constants: Constants
-): string {
-  return eval(`k => ${exp}`)(constants);
-}
-
-async function evalWithCatch(
-  exp: string
 ): Promise<(...args: Array<any>) => any> {
   try {
-    const fn = await eval(exp);
+    const fn = eval(`k => ${exp}`)(constants);
     return async function() {
       try {
         return await fn.apply(undefined, arguments);
@@ -135,7 +128,7 @@ async function evalExpression(
   return isInitialInput
     ? await (async () => {
         const code = `async () => (${exp})`;
-        const fn = await evalWithCatch(code);
+        const fn = await evalWithCatch(code, constants);
         const input = await fn();
         return input instanceof EvalError
           ? Seq.of([
@@ -156,7 +149,7 @@ async function evalExpression(
               ? x
               : x instanceof PipelineValue
               ? await (async () => {
-                  const fn = await evalWithCatch(code);
+                  const fn = await evalWithCatch(code, constants);
                   const result = await fn(await x.value, i);
                   return result instanceof EvalError
                     ? new PipelineError(
@@ -178,9 +171,7 @@ async function shellCmd(
   nextArgs: Array<string>,
   isInitialInput: boolean
 ): Promise<Seq<PipelineItem>> {
-  const fn = await evalWithCatch(
-    evaluableFromShellExpression(`(x, i) => \`${template}\``, constants)
-  );
+  const fn = await evalWithCatch(`(x, i) => \`${template}\``, constants);
   return isInitialInput
     ? await (async () => {
         try {
@@ -261,7 +252,7 @@ async function filter(
   input: Seq<PipelineItem>
 ): Promise<Seq<PipelineItem>> {
   const code = `async (x, i) => (${exp})`;
-  const fn = await evalWithCatch(code);
+  const fn = await evalWithCatch(code, constants);
   return input.filter(
     async (x, i): Promise<boolean> =>
       x instanceof PipelineError
@@ -281,7 +272,7 @@ async function flatMap(
   input: Seq<PipelineItem>
 ): Promise<Seq<PipelineItem>> {
   const code = `async (x, i) => (${exp})`;
-  const fn = await evalWithCatch(code);
+  const fn = await evalWithCatch(code, constants);
   return input.flatMap(async (x, i) =>
     x instanceof PipelineError
       ? [x]
@@ -309,9 +300,9 @@ async function reduce(
   initialValueExp: string
 ): Promise<PipelineItem> {
   const code = `async (acc, x, i) => (${exp})`;
-  const fn = await evalWithCatch(code);
+  const fn = await evalWithCatch(code, constants);
   const initialValueCode = `async () => (${initialValueExp})`;
-  const getInitialValue = await evalWithCatch(initialValueCode);
+  const getInitialValue = await evalWithCatch(initialValueCode, constants);
 
   const initialValue = await getInitialValue();
   const output =
@@ -429,7 +420,7 @@ type ExpressionStackEntry = {
 };
 
 type Constants = {
-  [key: string]: string;
+  [key: string]: any;
 };
 
 async function evaluateInternal(
@@ -485,12 +476,13 @@ async function evaluateInternal(
         )
     ],
 
-    /* Define a constant */
+    /* Define a sub-procedure */
     [
       x => x === "-d",
       async () => {
         const { cursor, expression } = munch(args.slice(2));
-        constants[args[1]] = expression;
+        constants[args[1]] = eval(expression);
+        evalWithCatch(expression, constants);
         return await evalShorthand(
           args.slice(cursor + 2),
           args,
@@ -528,7 +520,10 @@ async function evaluateInternal(
       async () => {
         const { cursor, expression } = munch(args.slice(1));
         const newSeq = input.map(async (x, i) => {
-          const fn = await evalWithCatch(`async (x, i) => (${expression})`);
+          const fn = await evalWithCatch(
+            `async (x, i) => (${expression})`,
+            constants
+          );
           return x instanceof PipelineError
             ? await (async () => {
                 const result = await fn(x, i);
@@ -576,7 +571,7 @@ async function evaluateInternal(
         const name = args[1];
         const { cursor, expression } = munch(args.slice(2));
         const recursePoint = expressionStack.find(e => e.name === name);
-        const fn = await evalWithCatch(`(x, i) => (${expression})`);
+        const fn = await evalWithCatch(`(x, i) => (${expression})`, constants);
         const newSeq = input.map(async (x, i) =>
           recursePoint
             ? x instanceof PipelineValue
@@ -645,25 +640,7 @@ async function evaluateInternal(
     ],
 
     /* JS expressions */
-    [
-      x => x === "-j",
-      async () => {
-        const { cursor, expression } = munch(args.slice(1));
-        return await evalShorthand(
-          args.slice(cursor + 1),
-          args,
-          constants,
-          await evalExpression(
-            expression,
-            constants,
-            input,
-            args.slice(cursor + 1),
-            isInitialInput
-          ),
-          false
-        );
-      }
-    ],
+    [x => x === "-j", getJSExpressionEvaluator(1)],
 
     /* Logging */
     [x => x === "-l", getPrinter(onLog)(input, args)],
@@ -795,7 +772,10 @@ async function evaluateInternal(
       async () => {
         const { cursor, expression } = munch(args.slice(1));
         async function* asyncGenerator(): AsyncIterableIterator<PipelineItem> {
-          const fn = await evalWithCatch(`(x, i) => (${expression})`);
+          const fn = await evalWithCatch(
+            `(x, i) => (${expression})`,
+            constants
+          );
           let i = 0;
           for await (const x of input) {
             if (x instanceof PipelineValue) {
@@ -853,31 +833,32 @@ async function evaluateInternal(
     [x => x === "-w", getPrinter(onWrite)(input, args)],
 
     /* Everything else as JS expressions */
-    [
-      x => true,
-      async () => {
-        const { cursor, expression } = munch(args);
-        return await evalShorthand(
-          args.slice(cursor),
-          args,
-          constants,
-          await evalExpression(
-            expression,
-            constants,
-            input,
-            args.slice(cursor),
-            isInitialInput
-          ),
-          false
-        );
-      }
-    ]
+    [x => true, getJSExpressionEvaluator(0)]
   ];
+
+  function getJSExpressionEvaluator(expressionStartIndex: number) {
+    return async () => {
+      const { cursor, expression } = munch(args.slice(expressionStartIndex));
+      return await evalShorthand(
+        args.slice(cursor + expressionStartIndex),
+        args,
+        constants,
+        await evalExpression(
+          expression,
+          constants,
+          input,
+          args.slice(cursor + expressionStartIndex),
+          isInitialInput
+        ),
+        false
+      );
+    };
+  }
 
   function getPrinter(printFn: BashoLogFn) {
     return (input: Seq<PipelineItem>, args: Array<string>) => async () => {
       const { cursor, expression } = munch(args.slice(1));
-      const fn = await evalWithCatch(`(x, i) => (${expression})`);
+      const fn = await evalWithCatch(`(x, i) => (${expression})`, constants);
       const newSeq = input.map(async (x, i) => {
         if (x instanceof PipelineValue) {
           const result = await fn(await x.value, i);
