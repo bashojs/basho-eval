@@ -1,4 +1,4 @@
-import { Constants, BashoLogFn, ExpressionStackEntry } from "../types";
+import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import { PipelineItem, PipelineError, PipelineValue } from "../pipeline";
 import { evalShorthand, evalWithCatch } from "../eval";
@@ -8,11 +8,11 @@ import { BashoEvalError } from "..";
 
 async function doFlatMap(
   exp: string,
-  constants: Constants,
+  evalStack: EvaluationStack,
   input: Seq<PipelineItem>
 ): Promise<Seq<PipelineItem>> {
   const code = `async (x, i) => (${exp})`;
-  const fn = await evalWithCatch(code, constants);
+  const fn = await evalWithCatch(code, evalStack);
   return input.flatMap(async (x, i) =>
     x instanceof PipelineError
       ? [x]
@@ -36,7 +36,7 @@ async function doFlatMap(
 export default async function flatMap(
   args: string[],
   prevArgs: string[],
-  constants: Constants,
+  evalStack: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -46,11 +46,11 @@ export default async function flatMap(
   expressionStack: Array<ExpressionStackEntry>
 ) {
   const { cursor, expression } = munch(args.slice(1));
-  const mapped = await doFlatMap(expression, constants, input);
+  const mapped = await doFlatMap(expression, evalStack, input);
   return await evalShorthand(
     args.slice(cursor + 1),
     args,
-    constants,
+    evalStack,
     mapped,
     mustPrint,
     onLog,

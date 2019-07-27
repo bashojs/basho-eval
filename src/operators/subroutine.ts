@@ -1,4 +1,4 @@
-import { Constants, BashoLogFn, ExpressionStackEntry } from "../types";
+import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import { PipelineItem } from "../pipeline";
 import { evalShorthand } from "../eval";
@@ -44,7 +44,7 @@ function createSubroutine(
 export default async function(
   args: string[],
   prevArgs: string[],
-  constants: Constants,
+  evalStack: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -57,12 +57,12 @@ export default async function(
     args[1],
     args.slice(2)
   );
-  const inScopeConstants = constants.slice(-1)[0];
-  inScopeConstants[args[1]] = subroutine;
+  evalStack.push();
+  evalStack.proxy[args[1]] = subroutine;
   return await evalShorthand(
     remainingArgs,
     args,
-    constants,
+    evalStack,
     input,
     mustPrint,
     onLog,

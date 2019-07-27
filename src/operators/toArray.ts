@@ -1,4 +1,4 @@
-import { Constants, BashoLogFn, ExpressionStackEntry } from "../types";
+import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import { PipelineItem, PipelineValue } from "../pipeline";
 import { evalShorthand } from "../eval";
@@ -6,7 +6,7 @@ import { evalShorthand } from "../eval";
 export default async function toArray(
   args: string[],
   prevArgs: string[],
-  constants: Constants,
+  evalStack: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -19,7 +19,7 @@ export default async function toArray(
   return await evalShorthand(
     args.slice(1),
     args,
-    constants,
+    evalStack,
     Seq.of([
       new PipelineValue(
         items.map(x => (x instanceof PipelineValue ? x.value : x))

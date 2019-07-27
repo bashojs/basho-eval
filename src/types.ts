@@ -6,12 +6,15 @@ export type ExpressionStackEntry = {
   args: string[];
 };
 
-// export type Constants = {
-//   [key: string]: any;
-// }[];
-
-export type Constants = {
+export type EvaluationEnv = {
   [key: string]: any;
+};
+
+export type EvaluationStack = {
+  push: () => void;
+  pop: () => void;
+  value: EvaluationEnv[];
+  proxy: EvaluationEnv;
 };
 
 export type BashoLogFn = (msg: string) => void;

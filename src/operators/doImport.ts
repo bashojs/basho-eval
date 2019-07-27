@@ -1,5 +1,5 @@
 import path = require("path");
-import { Constants, BashoLogFn, ExpressionStackEntry } from "../types";
+import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import * as util from "util";
 import * as fs from "fs";
@@ -50,7 +50,7 @@ async function evalImport(filename: string, alias: string) {
 export default async function doImport(
   args: string[],
   prevArgs: string[],
-  constants: Constants,
+  evalStack: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -63,7 +63,7 @@ export default async function doImport(
   return await evaluateInternal(
     args.slice(3),
     args,
-    constants,
+    evalStack,
     input,
     mustPrint,
     onLog,

@@ -1,4 +1,4 @@
-import { Constants, BashoLogFn, ExpressionStackEntry } from "../types";
+import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import { PipelineItem } from "../pipeline";
 import { getPrinter } from "../printer";
@@ -6,7 +6,7 @@ import { getPrinter } from "../printer";
 export default async function write(
   args: string[],
   prevArgs: string[],
-  constants: Constants,
+  evalStack: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -18,7 +18,7 @@ export default async function write(
   return getPrinter(onWrite)(
     args,
     prevArgs,
-    constants,
+    evalStack,
     input,
     mustPrint,
     onLog,

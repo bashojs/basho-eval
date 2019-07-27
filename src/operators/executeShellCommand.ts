@@ -1,4 +1,4 @@
-import { Constants, BashoLogFn, ExpressionStackEntry } from "../types";
+import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import { PipelineItem, PipelineValue, PipelineError } from "../pipeline";
 import { evalShorthand } from "../eval";
@@ -21,12 +21,12 @@ function shellEscape(str: string): string {
 
 export async function shellCmd(
   template: string,
-  constants: Constants,
+  evalStack: EvaluationStack,
   input: Seq<PipelineItem>,
   nextArgs: string[],
   isInitialInput: boolean
 ): Promise<Seq<PipelineItem>> {
-  const fn = await evalWithCatch(`(x, i) => \`${template}\``, constants);
+  const fn = await evalWithCatch(`(x, i) => \`${template}\``, evalStack);
   return isInitialInput
     ? await (async () => {
         try {
@@ -96,7 +96,7 @@ export async function shellCmd(
 export default async function executeShellCommand(
   args: string[],
   prevArgs: string[],
-  constants: Constants,
+  evalStack: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -109,10 +109,10 @@ export default async function executeShellCommand(
   return await evalShorthand(
     args.slice(cursor + 1),
     args,
-    constants,
+    evalStack,
     await shellCmd(
       expression,
-      constants,
+      evalStack,
       input,
       args.slice(cursor + 1),
       isInitialInput

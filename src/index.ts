@@ -1,10 +1,11 @@
 import { Seq } from "lazily-async";
 import exception from "./exception";
 import {
-  Constants,
+  EvaluationStack,
   BashoLogFn,
   ExpressionStackEntry,
-  BashoEvaluationResult
+  BashoEvaluationResult,
+  EvaluationEnv
 } from "./types";
 import { PipelineValue, PipelineItem } from "./pipeline";
 import jsExpression from "./operators/jsExpression";
@@ -43,18 +44,65 @@ export class BashoEvalError {
   }
 }
 
+function createProxy(): EvaluationStack {
+  const evalStack: EvaluationEnv[] = [{}];
+  const handler = {
+    get: (evalStack: EvaluationEnv[], prop: string) => {
+      const item = (function loop(evalStack: EvaluationEnv[]): any {
+        const last = evalStack.slice(-1)[0];
+        return last && last[prop]
+          ? last[prop]
+          : evalStack.length > 1
+          ? loop(evalStack.slice(0, -1))
+          : undefined;
+      })(evalStack);
+      return item;
+    },
+    set: (evalStack: EvaluationEnv[], prop: string, value: any) => {
+      const outer = evalStack.slice(-1)[0];
+      outer[prop] = value;
+      return true;
+    }
+  };
+
+  const proxy = new Proxy(evalStack, handler);
+
+  return {
+    push: () => evalStack.push({}),
+    pop: () => evalStack.pop(),
+    value: evalStack,
+    proxy
+  };
+}
+
 export async function evaluate(
   args: string[],
   pipedValues: string[] = [],
-  constants: Constants = {},
   mustPrint: boolean = true,
   onLog: BashoLogFn = () => {},
   onWrite: BashoLogFn = () => {}
 ) {
+  return await createStackAndEvaluate(
+    args,
+    pipedValues,
+    mustPrint,
+    onLog,
+    onWrite
+  );
+}
+
+export async function createStackAndEvaluate(
+  args: string[],
+  pipedValues: string[] = [],
+  mustPrint: boolean = true,
+  onLog: BashoLogFn = () => {},
+  onWrite: BashoLogFn = () => {}
+) {
+  const evalStack = createProxy();
   return await evaluateInternal(
     args,
     [],
-    constants,
+    evalStack,
     Seq.of(pipedValues.map(x => new PipelineValue(x))),
     mustPrint,
     onLog,
@@ -68,7 +116,7 @@ export async function evaluate(
 type OperatorFn = (
   args: string[],
   prevArgs: string[],
-  constants: Constants,
+  evalStack: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -81,7 +129,7 @@ type OperatorFn = (
 export async function evaluateInternal(
   args: string[],
   prevArgs: string[],
-  constants: Constants,
+  evalStack: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -159,7 +207,7 @@ export async function evaluateInternal(
           ? await handler[1](
               args,
               prevArgs,
-              constants,
+              evalStack,
               input,
               mustPrint,
               onLog,

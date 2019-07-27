@@ -1,4 +1,4 @@
-import { Constants, BashoLogFn, ExpressionStackEntry } from "../types";
+import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import { PipelineItem, PipelineError, PipelineValue } from "../pipeline";
 import { evalShorthand, evalWithCatch } from "../eval";
@@ -8,14 +8,14 @@ import { BashoEvalError } from "..";
 
 async function doReduce(
   exp: string,
-  constants: Constants,
+  evalStack: EvaluationStack,
   input: Seq<PipelineItem>,
   initialValueExp: string
 ): Promise<PipelineItem> {
   const code = `async (acc, x, i) => (${exp})`;
-  const fn = await evalWithCatch(code, constants);
+  const fn = await evalWithCatch(code, evalStack);
   const initialValueCode = `async () => (${initialValueExp})`;
-  const getInitialValue = await evalWithCatch(initialValueCode, constants);
+  const getInitialValue = await evalWithCatch(initialValueCode, evalStack);
 
   const initialValue = await getInitialValue();
   const output =
@@ -50,7 +50,7 @@ async function doReduce(
 export default async function reduce(
   args: string[],
   prevArgs: string[],
-  constants: Constants,
+  evalStack: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -66,14 +66,14 @@ export default async function reduce(
         return await (async () => {
           const reduced = await doReduce(
             expression,
-            constants,
+            evalStack,
             input,
             initialValue
           );
           return await evalShorthand(
             args.slice(cursor + 1),
             args,
-            constants,
+            evalStack,
             Seq.of([reduced]),
             mustPrint,
             onLog,

@@ -1,15 +1,15 @@
 import { Seq } from "lazily-async";
 import exception from "./exception";
-import { Constants, BashoEvaluationResult, BashoLogFn, ExpressionStackEntry } from "./types";
+import { EvaluationStack, BashoEvaluationResult, BashoLogFn, ExpressionStackEntry } from "./types";
 import { PipelineItem, PipelineError, PipelineValue } from "./pipeline";
 import { evaluateInternal, BashoEvalError } from ".";
 
 export async function evalWithCatch(
   exp: string,
-  constants: Constants
+  evalStack: EvaluationStack
 ): Promise<(...args: Array<any>) => any> {
   try {
-    const fn = eval(`k => ${exp}`)(constants);
+    const fn = eval(`k => ${exp}`)(evalStack);
     return async function() {
       try {
         return await fn.apply(undefined, arguments);
@@ -26,7 +26,7 @@ export async function evalWithCatch(
 
 export async function evalExpression(
   exp: string,
-  constants: Constants,
+  evalStack: EvaluationStack,
   input: Seq<PipelineItem>,
   nextArgs: string[],
   isInitialInput: boolean
@@ -34,7 +34,7 @@ export async function evalExpression(
   return isInitialInput
     ? await (async () => {
         const code = `async () => (${exp})`;
-        const fn = await evalWithCatch(code, constants);
+        const fn = await evalWithCatch(code, evalStack);
         const input = await fn();
         return input instanceof BashoEvalError
           ? Seq.of([
@@ -55,7 +55,7 @@ export async function evalExpression(
               ? x
               : x instanceof PipelineValue
               ? await (async () => {
-                  const fn = await evalWithCatch(code, constants);
+                  const fn = await evalWithCatch(code, evalStack);
                   const result = await fn(await x.value, i);
                   return result instanceof BashoEvalError
                     ? new PipelineError(
@@ -73,7 +73,7 @@ export async function evalExpression(
 export async function evalShorthand(
   args: string[],
     prevArgs: string[],
-    constants: Constants,
+    evalStack: EvaluationStack,
     input: Seq<PipelineItem>,
     mustPrint: boolean,
     onLog: BashoLogFn,
@@ -85,7 +85,7 @@ export async function evalShorthand(
   return await evaluateInternal(
     args,
     prevArgs,
-    constants,
+    evalStack,
     input,
     mustPrint,
     onLog,

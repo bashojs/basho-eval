@@ -1,4 +1,4 @@
-import { Constants, BashoLogFn, ExpressionStackEntry } from "../types";
+import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import { PipelineItem } from "../pipeline";
 import { evalShorthand, evalExpression } from "../eval";
@@ -8,7 +8,7 @@ export default function jsExpression(expressionStartIndex: number) {
   return async (
     args: string[],
     prevArgs: string[],
-    constants: Constants,
+    evalStack: EvaluationStack,
     input: Seq<PipelineItem>,
     mustPrint: boolean,
     onLog: BashoLogFn,
@@ -21,10 +21,10 @@ export default function jsExpression(expressionStartIndex: number) {
     return await evalShorthand(
       args.slice(cursor + expressionStartIndex),
       args,
-      constants,
+      evalStack,
       await evalExpression(
         expression,
-        constants,
+        evalStack,
         input,
         args.slice(cursor + expressionStartIndex),
         isInitialInput

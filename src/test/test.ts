@@ -152,7 +152,6 @@ describe("basho", () => {
     const output = await evaluate(
       ["[1,2,3,4]", "-l", "x+10", "-j", "x**2"],
       [],
-      [],
       true,
       onLog
     );
@@ -167,7 +166,6 @@ describe("basho", () => {
     resetWriteMessages();
     const output = await evaluate(
       ["[1,2,3,4]", "-w", "x+10", "-j", "x**2"],
-      [],
       [],
       true,
       onLog,

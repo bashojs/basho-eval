@@ -1,4 +1,4 @@
-import { Constants, BashoLogFn, ExpressionStackEntry } from "../types";
+import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import { PipelineItem } from "../pipeline";
 import { evalShorthand, evalWithCatch } from "../eval";
@@ -7,7 +7,7 @@ import { munch } from "../munch";
 export default async function defineExpression(
   args: string[],
   prevArgs: string[],
-  constants: Constants,
+  evalStack: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -17,13 +17,12 @@ export default async function defineExpression(
   expressionStack: Array<ExpressionStackEntry>
 ) {
   const { cursor, expression } = munch(args.slice(2));
-  const inScopeConstants = constants; //.slice(-1)[0];
-  inScopeConstants[args[1]] = eval(`k => ${expression}`)(constants);
-  evalWithCatch(expression, constants);
+  evalStack.proxy[args[1]] = eval(`k => ${expression}`)(evalStack);
+  evalWithCatch(expression, evalStack);
   return await evalShorthand(
     args.slice(cursor + 2),
     args,
-    constants,
+    evalStack,
     input,
     mustPrint,
     onLog,

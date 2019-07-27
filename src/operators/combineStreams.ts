@@ -1,4 +1,4 @@
-import { Constants, BashoLogFn, ExpressionStackEntry } from "../types";
+import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import { PipelineItem, PipelineValue, findNamedValue } from "../pipeline";
 import { evalShorthand } from "../eval";
@@ -6,7 +6,7 @@ import { evalShorthand } from "../eval";
 export default async function combineStreams(
   args: string[],
   prevArgs: string[],
-  constants: Constants,
+  evalStack: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -18,7 +18,7 @@ export default async function combineStreams(
   return await evalShorthand(
     args.slice(2),
     args,
-    constants,
+    evalStack,
     input.map(x => {
       const streams = args[1].split(",");
       return new PipelineValue(

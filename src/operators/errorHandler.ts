@@ -1,4 +1,4 @@
-import { Constants, BashoLogFn, ExpressionStackEntry } from "../types";
+import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import { PipelineItem } from "../pipeline";
 import { evaluateInternal } from "..";
@@ -6,7 +6,7 @@ import { evaluateInternal } from "..";
 export default async function errorHandler(
   args: string[],
   prevArgs: string[],
-  constants: Constants,
+  evalStack: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -18,7 +18,7 @@ export default async function errorHandler(
   return await evaluateInternal(
     args.slice(1),
     args,
-    constants,
+    evalStack,
     input,
     mustPrint,
     onLog,

@@ -1,4 +1,4 @@
-import { Constants, BashoLogFn, ExpressionStackEntry } from "../types";
+import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import { PipelineItem, PipelineError, PipelineValue } from "../pipeline";
 import { evalShorthand, evalWithCatch } from "../eval";
@@ -8,7 +8,7 @@ import { BashoEvalError } from "..";
 export default async function onError(
   args: string[],
   prevArgs: string[],
-  constants: Constants,
+  evalStack: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -21,7 +21,7 @@ export default async function onError(
   const newSeq = input.map(async (x, i) => {
     const fn = await evalWithCatch(
       `async (x, i) => (${expression})`,
-      constants
+      evalStack
     );
     return x instanceof PipelineError
       ? await (async () => {
@@ -40,7 +40,7 @@ export default async function onError(
   return await evalShorthand(
     args.slice(cursor + 1),
     args,
-    constants,
+    evalStack,
     newSeq,
     mustPrint,
     onLog,

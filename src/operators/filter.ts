@@ -1,4 +1,4 @@
-import { Constants, BashoLogFn, ExpressionStackEntry } from "../types";
+import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import { PipelineItem, PipelineError, PipelineValue } from "../pipeline";
 import { evalShorthand, evalWithCatch } from "../eval";
@@ -8,11 +8,11 @@ import { BashoEvalError } from "..";
 
 async function doFilter(
   exp: string,
-  constants: Constants,
+  evalStack: EvaluationStack,
   input: Seq<PipelineItem>
 ): Promise<Seq<PipelineItem>> {
   const code = `async (x, i) => (${exp})`;
-  const fn = await evalWithCatch(code, constants);
+  const fn = await evalWithCatch(code, evalStack);
   return input.filter(
     async (x, i): Promise<boolean> =>
       x instanceof PipelineError
@@ -29,7 +29,7 @@ async function doFilter(
 export default async function filter(
   args: string[],
   prevArgs: string[],
-  constants: Constants,
+  evalStack: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -39,11 +39,11 @@ export default async function filter(
   expressionStack: Array<ExpressionStackEntry>
 ) {
   const { cursor, expression } = munch(args.slice(1));
-  const filtered = await doFilter(expression, constants, input);
+  const filtered = await doFilter(expression, evalStack, input);
   return await evalShorthand(
     args.slice(cursor + 1),
     args,
-    constants,
+    evalStack,
     filtered,
     mustPrint,
     onLog,

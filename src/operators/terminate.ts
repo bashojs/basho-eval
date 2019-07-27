@@ -1,4 +1,4 @@
-import { Constants, BashoLogFn, ExpressionStackEntry } from "../types";
+import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import { PipelineItem, PipelineError, PipelineValue } from "../pipeline";
 import { evalShorthand, evalWithCatch } from "../eval";
@@ -8,7 +8,7 @@ import { BashoEvalError } from "..";
 export default async function terminate(
   args: string[],
   prevArgs: string[],
-  constants: Constants,
+  evalStack: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -19,7 +19,7 @@ export default async function terminate(
 ) {
   const { cursor, expression } = munch(args.slice(1));
   async function* asyncGenerator(): AsyncIterableIterator<PipelineItem> {
-    const fn = await evalWithCatch(`(x, i) => (${expression})`, constants);
+    const fn = await evalWithCatch(`(x, i) => (${expression})`, evalStack);
     let i = 0;
     for await (const x of input) {
       if (x instanceof PipelineValue) {
@@ -44,7 +44,7 @@ export default async function terminate(
   return await evalShorthand(
     args.slice(cursor + 1),
     args,
-    constants,
+    evalStack,
     new Seq(asyncGenerator),
     mustPrint,
     onLog,
