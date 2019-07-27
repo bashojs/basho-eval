@@ -2,7 +2,6 @@ import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import { PipelineItem } from "../pipeline";
 import { evalShorthand, evalExpression } from "../eval";
-import { munch } from "../munch";
 
 export default function jsExpression(expressionStartIndex: number) {
   return async (
@@ -17,16 +16,16 @@ export default function jsExpression(expressionStartIndex: number) {
     isFirstParam: boolean,
     expressionStack: Array<ExpressionStackEntry>
   ) => {
-    const { cursor, expression } = munch(args.slice(expressionStartIndex));
+    const expression = args[expressionStartIndex];
     return await evalShorthand(
-      args.slice(cursor + expressionStartIndex),
+      args.slice(expressionStartIndex + 1),
       args,
       evalStack,
       await evalExpression(
         expression,
         evalStack,
         input,
-        args.slice(cursor + expressionStartIndex),
+        args.slice(expressionStartIndex + 1),
         isInitialInput
       ),
       mustPrint,

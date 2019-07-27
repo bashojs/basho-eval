@@ -7,7 +7,6 @@ import * as util from "util";
 
 import { evalWithCatch } from "../eval";
 import exception from "../exception";
-import { munch } from "../munch";
 import { BashoEvalError } from "..";
 
 
@@ -105,16 +104,16 @@ export default async function executeShellCommand(
   isFirstParam: boolean,
   expressionStack: Array<ExpressionStackEntry>
 ) {
-  const { cursor, expression } = munch(args.slice(1));
+  const expression = args[1];
   return await evalShorthand(
-    args.slice(cursor + 1),
+    args.slice(2),
     args,
     evalStack,
     await shellCmd(
       expression,
       evalStack,
       input,
-      args.slice(cursor + 1),
+      args.slice(2),
       isInitialInput
     ),
     mustPrint,

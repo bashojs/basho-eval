@@ -2,7 +2,6 @@ import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import { PipelineItem, PipelineError, PipelineValue } from "../pipeline";
 import { evalShorthand, evalWithCatch } from "../eval";
-import { munch } from "../munch";
 import { evaluateInternal } from "..";
 
 export default async function recurse(
@@ -18,7 +17,7 @@ export default async function recurse(
   expressionStack: Array<ExpressionStackEntry>
 ) {
   const name = args[1];
-  const { cursor, expression } = munch(args.slice(2));
+  const expression = args[2];
   const recursePoint = expressionStack.find(e => e.name === name);
   const fn = await evalWithCatch(`(x, i) => (${expression})`, evalStack);
   const newSeq = input.map(async (x, i) =>
@@ -30,7 +29,7 @@ export default async function recurse(
               ? await (async () => {
                   const recurseArgs = recursePoint.args.slice(
                     0,
-                    recursePoint.args.length - (args.length - (cursor + 2))
+                    recursePoint.args.length - (args.length - 3)
                   );
                   const innerEvalResult = await evaluateInternal(
                     recurseArgs,
@@ -60,7 +59,7 @@ export default async function recurse(
         )
   );
   return await evalShorthand(
-    args.slice(cursor + 2),
+    args.slice(3),
     args,
     evalStack,
     newSeq,

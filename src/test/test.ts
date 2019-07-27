@@ -75,22 +75,6 @@ describe("basho", () => {
     });
   });
 
-  it(`Quotes a string`, async () => {
-    const output = await evaluate(["-q", "hello, world"]);
-    (await toResult(output)).should.deepEqual({
-      mustPrint: true,
-      result: ["hello, world"]
-    });
-  });
-
-  it(`Quotes an array of strings`, async () => {
-    const output = await evaluate(["-q", "hello,", "world"]);
-    (await toResult(output)).should.deepEqual({
-      mustPrint: true,
-      result: ["hello, world"]
-    });
-  });
-
   it(`Evals a promise`, async () => {
     const output = await evaluate(["Promise.resolve(1)"]);
     (await toResult(output)).should.deepEqual({

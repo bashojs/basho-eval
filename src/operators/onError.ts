@@ -2,7 +2,6 @@ import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import { PipelineItem, PipelineError, PipelineValue } from "../pipeline";
 import { evalShorthand, evalWithCatch } from "../eval";
-import { munch } from "../munch";
 import { BashoEvalError } from "..";
 
 export default async function onError(
@@ -17,7 +16,7 @@ export default async function onError(
   isFirstParam: boolean,
   expressionStack: Array<ExpressionStackEntry>
 ) {
-  const { cursor, expression } = munch(args.slice(1));
+  const expression = args[1];
   const newSeq = input.map(async (x, i) => {
     const fn = await evalWithCatch(
       `async (x, i) => (${expression})`,
@@ -38,7 +37,7 @@ export default async function onError(
   });
 
   return await evalShorthand(
-    args.slice(cursor + 1),
+    args.slice(2),
     args,
     evalStack,
     newSeq,

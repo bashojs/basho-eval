@@ -2,7 +2,6 @@ import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import { PipelineItem, PipelineError, PipelineValue } from "../pipeline";
 import { evalShorthand, evalWithCatch } from "../eval";
-import { munch } from "../munch";
 import exception from "../exception";
 import { BashoEvalError } from "..";
 
@@ -59,30 +58,20 @@ export default async function reduce(
   isFirstParam: boolean,
   expressionStack: Array<ExpressionStackEntry>
 ) {
-  const { cursor, expression, otherExpressions } = munch(args.slice(1), 1);
-  return typeof otherExpressions !== "undefined"
-    ? await (async () => {
-        const initialValue = otherExpressions[0];
-        return await (async () => {
-          const reduced = await doReduce(
-            expression,
-            evalStack,
-            input,
-            initialValue
-          );
-          return await evalShorthand(
-            args.slice(cursor + 1),
-            args,
-            evalStack,
-            Seq.of([reduced]),
-            mustPrint,
-            onLog,
-            onWrite,
-            false,
-            false,
-            expressionStack
-          );
-        })();
-      })()
-    : exception(`Failed to evaluate initial value expression.`);
+  const [expression, initialValue] = args.slice(1);
+  return await (async () => {
+    const reduced = await doReduce(expression, evalStack, input, initialValue);
+    return await evalShorthand(
+      args.slice(3),
+      args,
+      evalStack,
+      Seq.of([reduced]),
+      mustPrint,
+      onLog,
+      onWrite,
+      false,
+      false,
+      expressionStack
+    );
+  })();
 }
