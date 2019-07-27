@@ -46,6 +46,7 @@ export class BashoEvalError {
 
 function createProxy(): EvaluationStack {
   const evalStack: EvaluationEnv[] = [{}];
+
   const handler = {
     get: (evalStack: EvaluationEnv[], prop: string) => {
       const item = (function loop(evalStack: EvaluationEnv[]): any {

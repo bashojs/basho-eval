@@ -17,7 +17,7 @@ export default async function defineExpression(
   expressionStack: Array<ExpressionStackEntry>
 ) {
   const { cursor, expression } = munch(args.slice(2));
-  evalStack.proxy[args[1]] = eval(`k => ${expression}`)(evalStack);
+  evalStack.proxy[args[1]] = eval(`k => ${expression}`)(evalStack.proxy);
   evalWithCatch(expression, evalStack);
   return await evalShorthand(
     args.slice(cursor + 2),
