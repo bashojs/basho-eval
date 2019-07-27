@@ -2,7 +2,9 @@ import "./preload";
 import "mocha";
 import "should";
 import child_process from "child_process";
-import { evaluate, BashoEvaluationResult, PipelineValue } from "..";
+import { evaluate } from "..";
+import { BashoEvaluationResult } from "../types";
+import { PipelineValue } from "../pipeline";
 
 function execute(cmd: string): any {
   return new Promise((resolve, reject) => {
@@ -34,7 +36,7 @@ function onWrite(msg: string): void {
 async function toResult(
   output: BashoEvaluationResult
 ): Promise<{ mustPrint: boolean; result: Array<any> }> {
-  const result = (await output.result.toArray()).map(x =>
+  const result = (await output.result.toArray()).map((x: any) =>
     x instanceof PipelineValue ? x.value : x
   );
   return { mustPrint: output.mustPrint, result };
@@ -150,6 +152,7 @@ describe("basho", () => {
     const output = await evaluate(
       ["[1,2,3,4]", "-l", "x+10", "-j", "x**2"],
       [],
+      [],
       true,
       onLog
     );
@@ -164,6 +167,7 @@ describe("basho", () => {
     resetWriteMessages();
     const output = await evaluate(
       ["[1,2,3,4]", "-w", "x+10", "-j", "x**2"],
+      [],
       [],
       true,
       onLog,

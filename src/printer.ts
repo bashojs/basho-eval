@@ -1,0 +1,47 @@
+import { BashoLogFn, Constants, ExpressionStackEntry } from "./types";
+import { Seq } from "lazily-async";
+import { PipelineItem, PipelineValue } from "./pipeline";
+import { evalShorthand, evalWithCatch } from "./eval";
+import { munch } from "./munch";
+import { BashoEvalError } from ".";
+
+export function getPrinter(printFn: BashoLogFn) {
+  return async (
+    args: string[],
+    prevArgs: string[],
+    constants: Constants,
+    input: Seq<PipelineItem>,
+    mustPrint: boolean,
+    onLog: BashoLogFn,
+    onWrite: BashoLogFn,
+    isInitialInput: boolean,
+    isFirstParam: boolean,
+    expressionStack: Array<ExpressionStackEntry>
+  ) => {
+    const { cursor, expression } = munch(args.slice(1));
+    const fn = await evalWithCatch(`(x, i) => (${expression})`, constants);
+    const newSeq = input.map(async (x, i) => {
+      if (x instanceof PipelineValue) {
+        const result = await fn(await x.value, i);
+        printFn(
+          result instanceof BashoEvalError
+            ? `Failed to evaluate expression: ${expression}.`
+            : result
+        );
+      }
+      return x;
+    });
+    return await evalShorthand(
+      args.slice(cursor + 1),
+      args,
+      constants,
+      newSeq,
+      mustPrint,
+      onLog,
+      onWrite,
+      isInitialInput,
+      isFirstParam,
+      expressionStack
+    );
+  };
+}
