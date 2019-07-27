@@ -9,7 +9,7 @@ export async function evalWithCatch(
   evalStack: EvaluationStack
 ): Promise<(...args: Array<any>) => any> {
   try {
-    const fn = eval(`k => ${exp}`)(evalStack);
+    const fn = eval(`k => ${exp}`)(evalStack.proxy);
     return async function() {
       try {
         return await fn.apply(undefined, arguments);
