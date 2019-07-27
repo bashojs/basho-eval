@@ -185,7 +185,7 @@ describe("basho", () => {
   });
 
   it(`Receives an array at once`, async () => {
-    const output = await evaluate(["[1,2,3,4]", "-a", "x.length"]);
+    const output = await evaluate(["[1,2,3,4]", "-a", "-j", "x.length"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
       result: [4]

@@ -15,8 +15,9 @@ const options = [
   "-c",         // n1,n2,n3   combine a named stages
   "-d",         //            define an reusable expression
   "-e",         //            shell command
+  "--endsub",    //           end of --sub subroutine
   "-f",         //            filter
-  "-g",         // n, exp    recurse
+  "-g",         // n, exp     recurse 
   "--import",   //            import a file or module
   "-j",         //            JS expression
   "-l",         //            evaluate and log a value to console
@@ -26,6 +27,7 @@ const options = [
   "-p",         //            print
   "-r",         //            reduce
   "-s",         //            seek/recall a named result
+  "--sub",       //           define a subroutine
   "-t",         //            terminate evaluation
   "-w",         //            Same as log, but without the newline
   "--error",    //            Error handling
@@ -410,6 +412,7 @@ export async function evaluate(
     onLog,
     onWrite,
     pipedValues.length === 0,
+    true,
     []
   );
 }
@@ -432,6 +435,7 @@ async function evaluateInternal(
   onLog: BashoLogFn,
   onWrite: BashoLogFn,
   isInitialInput: boolean,
+  isFirstParam: boolean,
   expressionStack: Array<ExpressionStackEntry>
 ): Promise<BashoEvaluationResult> {
   const cases: Array<[(arg: string) => boolean, () => Promise<any>]> = [
@@ -449,6 +453,7 @@ async function evaluateInternal(
               items.map(x => (x instanceof PipelineValue ? x.value : x))
             )
           ]),
+          false,
           false
         );
       }
@@ -472,6 +477,7 @@ async function evaluateInternal(
               x
             );
           }),
+          false,
           false
         )
     ],
@@ -488,6 +494,7 @@ async function evaluateInternal(
           args,
           constants,
           input,
+          false,
           false
         );
       }
@@ -509,6 +516,7 @@ async function evaluateInternal(
             args.slice(cursor + 1),
             isInitialInput
           ),
+          false,
           false
         );
       }
@@ -543,6 +551,7 @@ async function evaluateInternal(
           args,
           constants,
           newSeq,
+          false,
           false
         );
       }
@@ -559,6 +568,7 @@ async function evaluateInternal(
           args,
           constants,
           filtered,
+          false,
           false
         );
       }
@@ -593,6 +603,7 @@ async function evaluateInternal(
                           onLog,
                           onWrite,
                           false,
+                          false,
                           []
                         );
                         const results = await innerEvalResult.result.toArray();
@@ -615,6 +626,7 @@ async function evaluateInternal(
           args,
           constants,
           newSeq,
+          false,
           false
         );
       }
@@ -634,6 +646,7 @@ async function evaluateInternal(
           onLog,
           onWrite,
           isInitialInput,
+          isFirstParam,
           expressionStack
         );
       }
@@ -656,6 +669,7 @@ async function evaluateInternal(
           args,
           constants,
           mapped,
+          false,
           false
         );
       }
@@ -675,6 +689,7 @@ async function evaluateInternal(
           onLog,
           onWrite,
           false,
+          false,
           expressionStack.concat({ name: args[1], args: prevArgs })
         );
       }
@@ -693,6 +708,7 @@ async function evaluateInternal(
           onLog,
           onWrite,
           isInitialInput,
+          isFirstParam,
           expressionStack
         )
     ],
@@ -710,6 +726,7 @@ async function evaluateInternal(
           onLog,
           onWrite,
           isInitialInput,
+          isFirstParam,
           expressionStack
         )
     ],
@@ -737,6 +754,7 @@ async function evaluateInternal(
                   args,
                   constants,
                   Seq.of([reduced]),
+                  false,
                   false
                 );
               })();
@@ -762,6 +780,7 @@ async function evaluateInternal(
               x
             );
           }),
+          false,
           false
         )
     ],
@@ -802,28 +821,7 @@ async function evaluateInternal(
           args,
           constants,
           new Seq(asyncGenerator),
-          false
-        );
-      }
-    ],
-
-    /* Recall and use the expression */
-    [
-      x => x === "-u",
-      async function() {
-        const { cursor, expression } = munch(args.slice(1));
-        const expandedExpression = eval(`k => \`${expression}\``)(constants);
-        return await evalShorthand(
-          args.slice(cursor + 1),
-          args,
-          constants,
-          await evalExpression(
-            expandedExpression,
-            constants,
-            input,
-            args.slice(cursor + 1),
-            isInitialInput
-          ),
+          false,
           false
         );
       }
@@ -833,7 +831,7 @@ async function evaluateInternal(
     [x => x === "-w", getPrinter(onWrite)(input, args)],
 
     /* Everything else as JS expressions */
-    [x => true, getJSExpressionEvaluator(0)]
+    [x => isFirstParam, getJSExpressionEvaluator(0)]
   ];
 
   function getJSExpressionEvaluator(expressionStartIndex: number) {
@@ -850,6 +848,7 @@ async function evaluateInternal(
           args.slice(cursor + expressionStartIndex),
           isInitialInput
         ),
+        false,
         false
       );
     };
@@ -875,7 +874,8 @@ async function evaluateInternal(
         args,
         constants,
         newSeq,
-        isInitialInput
+        isInitialInput,
+        isFirstParam
       );
     };
   }
@@ -885,7 +885,8 @@ async function evaluateInternal(
     prevArgs: Array<string>,
     constants: Constants,
     input: Seq<PipelineItem>,
-    isInitialInput: boolean
+    isInitialInput: boolean,
+    isFirstParam: boolean
   ): Promise<BashoEvaluationResult> {
     return await evaluateInternal(
       args,
@@ -896,6 +897,7 @@ async function evaluateInternal(
       onLog,
       onWrite,
       isInitialInput,
+      false,
       expressionStack
     );
   }
