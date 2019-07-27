@@ -1,7 +1,7 @@
 import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import { PipelineItem, PipelineValue, findNamedValue } from "../pipeline";
-import { evalShorthand } from "../eval";
+import { evaluateInternal } from "..";
 
 export default async function combineStreams(
   args: string[],
@@ -15,7 +15,7 @@ export default async function combineStreams(
   isFirstParam: boolean,
   expressionStack: Array<ExpressionStackEntry>
 ) {
-  return await evalShorthand(
+  return await evaluateInternal(
     args.slice(2),
     args,
     evalStack,

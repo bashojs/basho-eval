@@ -1,6 +1,11 @@
 import { Seq } from "lazily-async";
 import exception from "./exception";
-import { EvaluationStack, BashoEvaluationResult, BashoLogFn, ExpressionStackEntry } from "./types";
+import {
+  EvaluationStack,
+  BashoEvaluationResult,
+  BashoLogFn,
+  ExpressionStackEntry
+} from "./types";
 import { PipelineItem, PipelineError, PipelineValue } from "./pipeline";
 import { evaluateInternal, BashoEvalError } from ".";
 
@@ -70,28 +75,3 @@ export async function evalExpression(
       })();
 }
 
-export async function evalShorthand(
-  args: string[],
-    prevArgs: string[],
-    evalStack: EvaluationStack,
-    input: Seq<PipelineItem>,
-    mustPrint: boolean,
-    onLog: BashoLogFn,
-    onWrite: BashoLogFn,
-    isInitialInput: boolean,
-    isFirstParam: boolean,
-    expressionStack: Array<ExpressionStackEntry>
-): Promise<BashoEvaluationResult> {
-  return await evaluateInternal(
-    args,
-    prevArgs,
-    evalStack,
-    input,
-    mustPrint,
-    onLog,
-    onWrite,
-    isInitialInput,
-    false,
-    expressionStack
-  );
-}

@@ -1,8 +1,8 @@
 import { BashoLogFn, EvaluationStack, ExpressionStackEntry } from "./types";
 import { Seq } from "lazily-async";
 import { PipelineItem, PipelineValue } from "./pipeline";
-import { evalShorthand, evalWithCatch } from "./eval";
-import { BashoEvalError } from ".";
+import { evalWithCatch } from "./eval";
+import { BashoEvalError, evaluateInternal } from ".";
 
 export function getPrinter(printFn: BashoLogFn) {
   return async (
@@ -30,7 +30,7 @@ export function getPrinter(printFn: BashoLogFn) {
       }
       return x;
     });
-    return await evalShorthand(
+    return await evaluateInternal(
       args.slice(2),
       args,
       evalStack,

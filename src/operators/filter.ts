@@ -1,9 +1,9 @@
 import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import { PipelineItem, PipelineError, PipelineValue } from "../pipeline";
-import { evalShorthand, evalWithCatch } from "../eval";
+import {  evalWithCatch } from "../eval";
 import exception from "../exception";
-import { BashoEvalError } from "..";
+import { BashoEvalError, evaluateInternal } from "..";
 
 async function doFilter(
   exp: string,
@@ -39,7 +39,7 @@ export default async function filter(
 ) {
   const expression = args[1];
   const filtered = await doFilter(expression, evalStack, input);
-  return await evalShorthand(
+  return await evaluateInternal(
     args.slice(2),
     args,
     evalStack,

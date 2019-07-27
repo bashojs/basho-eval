@@ -13,7 +13,7 @@ import errorHandler from "./operators/errorHandler";
 import toArray from "./operators/toArray";
 import combineStreams from "./operators/combineStreams";
 import defineExpression from "./operators/defineExpression";
-import executeShellCommand from "./operators/executeShellCommand";
+import execShellCommand from "./operators/execShellCommand";
 import onError from "./operators/onError";
 import filter from "./operators/filter";
 import recurse from "./operators/recurse";
@@ -138,7 +138,7 @@ export async function evaluateInternal(
   isInitialInput: boolean,
   isFirstParam: boolean,
   expressionStack: Array<ExpressionStackEntry>
-): Promise<BashoEvaluationResult> {
+): Promise<BashoEvaluationResult> {  
   const cases: Array<[(arg: string) => boolean, OperatorFn]> = [
     /* Enumerate sequence into an array */
     [x => x === "-a", toArray],
@@ -150,7 +150,7 @@ export async function evaluateInternal(
     [x => x === "-d", defineExpression],
 
     /* Execute shell command */
-    [x => x === "-e", executeShellCommand],
+    [x => x === "-e", execShellCommand],
 
     /* Error handling */
     [x => x === "--error", onError],

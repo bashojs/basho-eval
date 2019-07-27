@@ -1,8 +1,8 @@
 import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
-import { PipelineItem } from "../pipeline";
-import { evalShorthand } from "../eval";
+import { PipelineItem, PipelineValue } from "../pipeline";
 import exception from "../exception";
+import { evaluateInternal } from "..";
 
 interface ISubroutine {
   name: string;
@@ -46,31 +46,34 @@ export default async function subroutine(
         : exception(`Did not find --endsub for subroutine ${name}.`);
     })(args, [], 0);
 
-    async function executeSubroutine() {
-      return await evalShorthand(
-        remainingArgs,
-        args,
+    async function execSubroutine(x: any) {
+      evalStack.push();
+      const result = await evaluateInternal(
+        argsInSub,
+        [],
         evalStack,
-        input,
+        Seq.of([x].map(x => new PipelineValue(x))),
         mustPrint,
         onLog,
         onWrite,
         false,
-        false,
-        expressionStack
+        true,
+        []
       );
+      console.log(await result.result.toArray());
     }
 
-    return { subroutine: executeSubroutine, args: rest };
+    console.log(rest);
+    return { subroutine: execSubroutine, args: rest };
   }
 
   const { subroutine, args: remainingArgs } = createSubroutine(
     args[1],
     args.slice(2)
   );
-  evalStack.push();
-  evalStack.proxy[args[1]] = subroutine;
-  return await evalShorthand(
+  const name = args[1];
+  evalStack.proxy[name] = subroutine;
+  return await evaluateInternal(
     remainingArgs,
     args,
     evalStack,

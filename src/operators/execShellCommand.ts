@@ -1,13 +1,12 @@
 import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import { PipelineItem, PipelineValue, PipelineError } from "../pipeline";
-import { evalShorthand } from "../eval";
 import child_process = require("child_process");
 import * as util from "util";
 
 import { evalWithCatch } from "../eval";
 import exception from "../exception";
-import { BashoEvalError } from "..";
+import { BashoEvalError, evaluateInternal } from "..";
 
 
 const exec = util.promisify(child_process.exec);
@@ -92,7 +91,7 @@ export async function shellCmd(
 }
 
 
-export default async function executeShellCommand(
+export default async function execShellCommand(
   args: string[],
   prevArgs: string[],
   evalStack: EvaluationStack,
@@ -105,7 +104,7 @@ export default async function executeShellCommand(
   expressionStack: Array<ExpressionStackEntry>
 ) {
   const expression = args[1];
-  return await evalShorthand(
+  return await evaluateInternal(
     args.slice(2),
     args,
     evalStack,

@@ -1,7 +1,8 @@
 import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import { PipelineItem } from "../pipeline";
-import { evalShorthand, evalWithCatch } from "../eval";
+import { evalWithCatch } from "../eval";
+import { evaluateInternal } from "..";
 
 export default async function defineExpression(
   args: string[],
@@ -15,10 +16,11 @@ export default async function defineExpression(
   isFirstParam: boolean,
   expressionStack: Array<ExpressionStackEntry>
 ) {
-  const [name, expression] = args.slice(1);
+  const name = args[1];
+  const expression = args[2];
   evalStack.proxy[name] = eval(`k => ${expression}`)(evalStack.proxy);
   evalWithCatch(expression, evalStack);
-  return await evalShorthand(
+  return await evaluateInternal(
     args.slice(3),
     args,
     evalStack,

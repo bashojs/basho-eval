@@ -1,8 +1,8 @@
 import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import { PipelineItem, PipelineError, PipelineValue } from "../pipeline";
-import { evalShorthand, evalWithCatch } from "../eval";
-import { BashoEvalError } from "..";
+import { evalWithCatch } from "../eval";
+import { BashoEvalError, evaluateInternal } from "..";
 
 export default async function terminate(
   args: string[],
@@ -40,7 +40,7 @@ export default async function terminate(
       i++;
     }
   }
-  return await evalShorthand(
+  return await evaluateInternal(
     args.slice(2),
     args,
     evalStack,

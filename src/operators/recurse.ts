@@ -1,7 +1,7 @@
 import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import { PipelineItem, PipelineError, PipelineValue } from "../pipeline";
-import { evalShorthand, evalWithCatch } from "../eval";
+import { evalWithCatch } from "../eval";
 import { evaluateInternal } from "..";
 
 export default async function recurse(
@@ -58,7 +58,7 @@ export default async function recurse(
           x
         )
   );
-  return await evalShorthand(
+  return await evaluateInternal(
     args.slice(3),
     args,
     evalStack,

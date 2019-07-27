@@ -1,9 +1,9 @@
 import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import { PipelineItem, PipelineError, PipelineValue } from "../pipeline";
-import { evalShorthand, evalWithCatch } from "../eval";
+import { evalWithCatch } from "../eval";
 import exception from "../exception";
-import { BashoEvalError } from "..";
+import { BashoEvalError, evaluateInternal } from "..";
 
 async function doFlatMap(
   exp: string,
@@ -49,7 +49,7 @@ export default async function flatMap(
 ) {
   const expression = args[1];
   const mapped = await doFlatMap(expression, evalStack, input);
-  return await evalShorthand(
+  return await evaluateInternal(
     args.slice(2),
     args,
     evalStack,

@@ -1,7 +1,7 @@
 import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import { PipelineItem, PipelineValue } from "../pipeline";
-import { evalShorthand } from "../eval";
+import { evaluateInternal } from "..";
 
 export default async function toArray(
   args: string[],
@@ -16,7 +16,7 @@ export default async function toArray(
   expressionStack: Array<ExpressionStackEntry>
 ) {
   const items = await input.toArray();
-  return await evalShorthand(
+  return await evaluateInternal(
     args.slice(1),
     args,
     evalStack,
