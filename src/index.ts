@@ -28,6 +28,8 @@ import subroutine from "./operators/subroutine";
 import terminate from "./operators/terminate";
 import write from "./operators/write";
 
+export { PipelineValue, PipelineError } from "./pipeline";
+
 export class QuotedExpression {
   str: string[];
 
@@ -138,7 +140,7 @@ export async function evaluateInternal(
   isInitialInput: boolean,
   isFirstParam: boolean,
   expressionStack: Array<ExpressionStackEntry>
-): Promise<BashoEvaluationResult> {  
+): Promise<BashoEvaluationResult> {
   const cases: Array<[(arg: string) => boolean, OperatorFn]> = [
     /* Enumerate sequence into an array */
     [x => x === "-a", toArray],
