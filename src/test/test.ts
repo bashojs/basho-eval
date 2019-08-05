@@ -409,6 +409,29 @@ describe("basho", () => {
     });
   });
 
+  it(`Can use nested subroutines`, async () => {
+    const output = await evaluate([
+      "[10, 11, 12]",
+      "--sub",
+      "multiply",
+      "--sub",
+      "square",
+      "x*x",
+      "--endsub",
+      "-j",
+      "x*10",
+      "-j",
+      "k.square(x)",
+      "--endsub",
+      "-j",
+      "k.multiply(x)"
+    ]);
+    (await toResult(output)).should.deepEqual({
+      mustPrint: true,
+      result: [10000, 12100, 14400]
+    });
+  });
+
   it(`Passes the output of the shell command output to the next expression`, async () => {
     const output = await evaluate([
       "-e",

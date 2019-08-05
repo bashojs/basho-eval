@@ -10,7 +10,7 @@ async function doFlatMap(
   evalScope: EvaluationStack,
   input: Seq<PipelineItem>
 ): Promise<Seq<PipelineItem>> {
-  const code = `async (x, i) => (${exp})`;
+  const code = `(x, i) => (${exp})`;
   const fn = await evalWithCatch(code, evalScope);
   return input.flatMap(async (x, i) =>
     x instanceof PipelineError

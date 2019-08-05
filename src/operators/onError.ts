@@ -19,7 +19,7 @@ export default async function onError(
   const expression = args[1];
   const newSeq = input.map(async (x, i) => {
     const fn = await evalWithCatch(
-      `async (x, i) => (${expression})`,
+      `(x, i) => (${expression})`,
       evalScope
     );
     return x instanceof PipelineError

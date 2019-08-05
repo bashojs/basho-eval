@@ -1,23 +1,24 @@
 import { Seq } from "lazily-async";
 import exception from "./exception";
-import {
-  EvaluationStack,
-  BashoEvaluationResult,
-  BashoLogFn,
-  ExpressionStackEntry
-} from "./types";
+import { EvaluationStack } from "./types";
 import { PipelineItem, PipelineError, PipelineValue } from "./pipeline";
-import { evaluateInternal, BashoEvalError } from ".";
+import { BashoEvalError } from ".";
+
+async function unwrapNestedPromises(obj: any): Promise<any> {
+  const resolved = Promise.resolve(obj);
+  return resolved === obj ? obj : await unwrapNestedPromises(resolved);
+}
 
 export async function evalWithCatch(
   exp: string,
   evalScope: EvaluationStack
 ): Promise<(...args: Array<any>) => any> {
   try {
-    const fn = eval(`k => ${exp}`)(evalScope.proxy);
+    const fn = eval(`k => (${exp})`)(evalScope.proxy);
     return async function() {
       try {
-        return await fn.apply(undefined, arguments);
+        const maybePromise = await fn.apply(undefined, arguments);
+        return await unwrapNestedPromises(maybePromise);
       } catch (ex) {
         return new BashoEvalError(ex);
       }
@@ -38,7 +39,7 @@ export async function evalExpression(
 ): Promise<Seq<PipelineItem>> {
   return isInitialInput
     ? await (async () => {
-        const code = `async () => (${exp})`;
+        const code = `() => (${exp})`;
         const fn = await evalWithCatch(code, evalScope);
         const input = await fn();
         return input instanceof BashoEvalError
@@ -53,7 +54,7 @@ export async function evalExpression(
           : Seq.of([new PipelineValue(input)]);
       })()
     : await (async () => {
-        const code = `async (x, i) => (${exp})`;
+        const code = `(x, i) => (${exp})`;
         return input.map(
           async (x, i): Promise<PipelineItem> =>
             x instanceof PipelineError
@@ -74,4 +75,3 @@ export async function evalExpression(
         );
       })();
 }
-

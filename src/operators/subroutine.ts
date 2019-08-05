@@ -60,8 +60,8 @@ export default async function subroutine(
         true,
         []
       );
-      evalScope.unwind();
       const subResult = (await result.result.toArray())[0];
+      evalScope.unwind();
       return subResult instanceof PipelineValue
         ? subResult.value
         : subResult instanceof PipelineError

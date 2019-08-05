@@ -10,7 +10,7 @@ async function doFilter(
   evalScope: EvaluationStack,
   input: Seq<PipelineItem>
 ): Promise<Seq<PipelineItem>> {
-  const code = `async (x, i) => (${exp})`;
+  const code = `(x, i) => (${exp})`;
   const fn = await evalWithCatch(code, evalScope);
   return input.filter(
     async (x, i): Promise<boolean> =>
