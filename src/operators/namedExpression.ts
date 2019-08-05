@@ -6,7 +6,7 @@ import { evaluateInternal } from "..";
 export default async function namedExpression(
   args: string[],
   prevArgs: string[],
-  evalStack: EvaluationStack,
+  evalScope: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -19,7 +19,7 @@ export default async function namedExpression(
   return await evaluateInternal(
     args.slice(2),
     args,
-    evalStack,
+    evalScope,
     newSeq,
     mustPrint,
     onLog,

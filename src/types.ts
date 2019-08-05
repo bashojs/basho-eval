@@ -11,8 +11,8 @@ export type EvaluationEnv = {
 };
 
 export type EvaluationStack = {
-  push: () => void;
-  pop: () => void;
+  create: () => void;
+  unwind: () => void;
   value: EvaluationEnv[];
   proxy: EvaluationEnv;
 };

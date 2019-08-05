@@ -7,11 +7,11 @@ import { BashoEvalError, evaluateInternal } from "..";
 
 async function doFilter(
   exp: string,
-  evalStack: EvaluationStack,
+  evalScope: EvaluationStack,
   input: Seq<PipelineItem>
 ): Promise<Seq<PipelineItem>> {
   const code = `async (x, i) => (${exp})`;
-  const fn = await evalWithCatch(code, evalStack);
+  const fn = await evalWithCatch(code, evalScope);
   return input.filter(
     async (x, i): Promise<boolean> =>
       x instanceof PipelineError
@@ -28,7 +28,7 @@ async function doFilter(
 export default async function filter(
   args: string[],
   prevArgs: string[],
-  evalStack: EvaluationStack,
+  evalScope: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -38,11 +38,11 @@ export default async function filter(
   expressionStack: Array<ExpressionStackEntry>
 ) {
   const expression = args[1];
-  const filtered = await doFilter(expression, evalStack, input);
+  const filtered = await doFilter(expression, evalScope, input);
   return await evaluateInternal(
     args.slice(2),
     args,
-    evalStack,
+    evalScope,
     filtered,
     mustPrint,
     onLog,

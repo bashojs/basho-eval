@@ -19,12 +19,12 @@ function shellEscape(str: string): string {
 
 export async function shellCmd(
   template: string,
-  evalStack: EvaluationStack,
+  evalScope: EvaluationStack,
   input: Seq<PipelineItem>,
   nextArgs: string[],
   isInitialInput: boolean
 ): Promise<Seq<PipelineItem>> {
-  const fn = await evalWithCatch(`(x, i) => \`${template}\``, evalStack);
+  const fn = await evalWithCatch(`(x, i) => \`${template}\``, evalScope);
   return isInitialInput
     ? await (async () => {
         try {
@@ -94,7 +94,7 @@ export async function shellCmd(
 export default async function execShellCommand(
   args: string[],
   prevArgs: string[],
-  evalStack: EvaluationStack,
+  evalScope: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -107,10 +107,10 @@ export default async function execShellCommand(
   return await evaluateInternal(
     args.slice(2),
     args,
-    evalStack,
+    evalScope,
     await shellCmd(
       expression,
-      evalStack,
+      evalScope,
       input,
       args.slice(2),
       isInitialInput

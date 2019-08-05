@@ -7,7 +7,7 @@ import { BashoEvalError, evaluateInternal } from "..";
 export default async function onError(
   args: string[],
   prevArgs: string[],
-  evalStack: EvaluationStack,
+  evalScope: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -20,7 +20,7 @@ export default async function onError(
   const newSeq = input.map(async (x, i) => {
     const fn = await evalWithCatch(
       `async (x, i) => (${expression})`,
-      evalStack
+      evalScope
     );
     return x instanceof PipelineError
       ? await (async () => {
@@ -39,7 +39,7 @@ export default async function onError(
   return await evaluateInternal(
     args.slice(2),
     args,
-    evalStack,
+    evalScope,
     newSeq,
     mustPrint,
     onLog,

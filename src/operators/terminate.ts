@@ -7,7 +7,7 @@ import { BashoEvalError, evaluateInternal } from "..";
 export default async function terminate(
   args: string[],
   prevArgs: string[],
-  evalStack: EvaluationStack,
+  evalScope: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -18,7 +18,7 @@ export default async function terminate(
 ) {
   const expression = args[1];
   async function* asyncGenerator(): AsyncIterableIterator<PipelineItem> {
-    const fn = await evalWithCatch(`(x, i) => (${expression})`, evalStack);
+    const fn = await evalWithCatch(`(x, i) => (${expression})`, evalScope);
     let i = 0;
     for await (const x of input) {
       if (x instanceof PipelineValue) {
@@ -43,7 +43,7 @@ export default async function terminate(
   return await evaluateInternal(
     args.slice(2),
     args,
-    evalStack,
+    evalScope,
     new Seq(asyncGenerator),
     mustPrint,
     onLog,

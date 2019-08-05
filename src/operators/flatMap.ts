@@ -7,11 +7,11 @@ import { BashoEvalError, evaluateInternal } from "..";
 
 async function doFlatMap(
   exp: string,
-  evalStack: EvaluationStack,
+  evalScope: EvaluationStack,
   input: Seq<PipelineItem>
 ): Promise<Seq<PipelineItem>> {
   const code = `async (x, i) => (${exp})`;
-  const fn = await evalWithCatch(code, evalStack);
+  const fn = await evalWithCatch(code, evalScope);
   return input.flatMap(async (x, i) =>
     x instanceof PipelineError
       ? [x]
@@ -38,7 +38,7 @@ async function doFlatMap(
 export default async function flatMap(
   args: string[],
   prevArgs: string[],
-  evalStack: EvaluationStack,
+  evalScope: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -48,11 +48,11 @@ export default async function flatMap(
   expressionStack: Array<ExpressionStackEntry>
 ) {
   const expression = args[1];
-  const mapped = await doFlatMap(expression, evalStack, input);
+  const mapped = await doFlatMap(expression, evalScope, input);
   return await evaluateInternal(
     args.slice(2),
     args,
-    evalStack,
+    evalScope,
     mapped,
     mustPrint,
     onLog,

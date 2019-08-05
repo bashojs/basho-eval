@@ -8,7 +8,7 @@ export default function jsExpression(expressionStartIndex: number) {
   return async (
     args: string[],
     prevArgs: string[],
-    evalStack: EvaluationStack,
+    evalScope: EvaluationStack,
     input: Seq<PipelineItem>,
     mustPrint: boolean,
     onLog: BashoLogFn,
@@ -21,10 +21,10 @@ export default function jsExpression(expressionStartIndex: number) {
     return await evaluateInternal(
       args.slice(expressionStartIndex + 1),
       args,
-      evalStack,
+      evalScope,
       await evalExpression(
         expression,
-        evalStack,
+        evalScope,
         input,
         args.slice(expressionStartIndex + 1),
         isInitialInput

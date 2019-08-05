@@ -6,7 +6,7 @@ import { evaluateInternal } from "..";
 export default async function toArray(
   args: string[],
   prevArgs: string[],
-  evalStack: EvaluationStack,
+  evalScope: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -19,7 +19,7 @@ export default async function toArray(
   return await evaluateInternal(
     args.slice(1),
     args,
-    evalStack,
+    evalScope,
     Seq.of([
       new PipelineValue(
         items.map(x => (x instanceof PipelineValue ? x.value : x))

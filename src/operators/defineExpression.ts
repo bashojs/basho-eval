@@ -7,7 +7,7 @@ import { evaluateInternal } from "..";
 export default async function defineExpression(
   args: string[],
   prevArgs: string[],
-  evalStack: EvaluationStack,
+  evalScope: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -18,12 +18,12 @@ export default async function defineExpression(
 ) {
   const name = args[1];
   const expression = args[2];
-  evalStack.proxy[name] = eval(`k => ${expression}`)(evalStack.proxy);
-  evalWithCatch(expression, evalStack);
+  evalScope.proxy[name] = eval(`k => ${expression}`)(evalScope.proxy);
+  evalWithCatch(expression, evalScope);
   return await evaluateInternal(
     args.slice(3),
     args,
-    evalStack,
+    evalScope,
     input,
     mustPrint,
     onLog,

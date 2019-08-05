@@ -1,6 +1,6 @@
 import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
-import { PipelineItem, PipelineValue } from "../pipeline";
+import { PipelineItem, PipelineValue, PipelineError } from "../pipeline";
 import exception from "../exception";
 import { evaluateInternal } from "..";
 
@@ -12,7 +12,7 @@ interface ISubroutine {
 export default async function subroutine(
   args: string[],
   prevArgs: string[],
-  evalStack: EvaluationStack,
+  evalScope: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -47,11 +47,11 @@ export default async function subroutine(
     })(args, [], 0);
 
     async function execSubroutine(x: any) {
-      evalStack.push();
+      evalScope.create();
       const result = await evaluateInternal(
         argsInSub,
         [],
-        evalStack,
+        evalScope,
         Seq.of([x].map(x => new PipelineValue(x))),
         mustPrint,
         onLog,
@@ -60,10 +60,15 @@ export default async function subroutine(
         true,
         []
       );
-      console.log(await result.result.toArray());
+      evalScope.unwind();
+      const subResult = (await result.result.toArray())[0];
+      return subResult instanceof PipelineValue
+        ? subResult.value
+        : subResult instanceof PipelineError
+        ? subResult
+        : exception(`Invalid item ${x} in pipeline.`);
     }
 
-    console.log(rest);
     return { subroutine: execSubroutine, args: rest };
   }
 
@@ -72,11 +77,11 @@ export default async function subroutine(
     args.slice(2)
   );
   const name = args[1];
-  evalStack.proxy[name] = subroutine;
+  evalScope.proxy[name] = subroutine;
   return await evaluateInternal(
     remainingArgs,
     args,
-    evalStack,
+    evalScope,
     input,
     mustPrint,
     onLog,

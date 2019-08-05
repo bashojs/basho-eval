@@ -7,14 +7,14 @@ import { BashoEvalError, evaluateInternal } from "..";
 
 async function doReduce(
   exp: string,
-  evalStack: EvaluationStack,
+  evalScope: EvaluationStack,
   input: Seq<PipelineItem>,
   initialValueExp: string
 ): Promise<PipelineItem> {
   const code = `async (acc, x, i) => (${exp})`;
-  const fn = await evalWithCatch(code, evalStack);
+  const fn = await evalWithCatch(code, evalScope);
   const initialValueCode = `async () => (${initialValueExp})`;
-  const getInitialValue = await evalWithCatch(initialValueCode, evalStack);
+  const getInitialValue = await evalWithCatch(initialValueCode, evalScope);
 
   const initialValue = await getInitialValue();
   const output =
@@ -49,7 +49,7 @@ async function doReduce(
 export default async function reduce(
   args: string[],
   prevArgs: string[],
-  evalStack: EvaluationStack,
+  evalScope: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -60,11 +60,11 @@ export default async function reduce(
 ) {
   const [expression, initialValue] = args.slice(1);
   return await (async () => {
-    const reduced = await doReduce(expression, evalStack, input, initialValue);
+    const reduced = await doReduce(expression, evalScope, input, initialValue);
     return await evaluateInternal(
       args.slice(3),
       args,
-      evalStack,
+      evalScope,
       Seq.of([reduced]),
       mustPrint,
       onLog,

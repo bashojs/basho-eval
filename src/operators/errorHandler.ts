@@ -6,7 +6,7 @@ import { evaluateInternal } from "..";
 export default async function errorHandler(
   args: string[],
   prevArgs: string[],
-  evalStack: EvaluationStack,
+  evalScope: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -18,7 +18,7 @@ export default async function errorHandler(
   return await evaluateInternal(
     args.slice(1),
     args,
-    evalStack,
+    evalScope,
     input,
     mustPrint,
     onLog,

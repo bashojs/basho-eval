@@ -11,10 +11,10 @@ import { evaluateInternal, BashoEvalError } from ".";
 
 export async function evalWithCatch(
   exp: string,
-  evalStack: EvaluationStack
+  evalScope: EvaluationStack
 ): Promise<(...args: Array<any>) => any> {
   try {
-    const fn = eval(`k => ${exp}`)(evalStack.proxy);
+    const fn = eval(`k => ${exp}`)(evalScope.proxy);
     return async function() {
       try {
         return await fn.apply(undefined, arguments);
@@ -31,7 +31,7 @@ export async function evalWithCatch(
 
 export async function evalExpression(
   exp: string,
-  evalStack: EvaluationStack,
+  evalScope: EvaluationStack,
   input: Seq<PipelineItem>,
   nextArgs: string[],
   isInitialInput: boolean
@@ -39,7 +39,7 @@ export async function evalExpression(
   return isInitialInput
     ? await (async () => {
         const code = `async () => (${exp})`;
-        const fn = await evalWithCatch(code, evalStack);
+        const fn = await evalWithCatch(code, evalScope);
         const input = await fn();
         return input instanceof BashoEvalError
           ? Seq.of([
@@ -60,7 +60,7 @@ export async function evalExpression(
               ? x
               : x instanceof PipelineValue
               ? await (async () => {
-                  const fn = await evalWithCatch(code, evalStack);
+                  const fn = await evalWithCatch(code, evalScope);
                   const result = await fn(await x.value, i);
                   return result instanceof BashoEvalError
                     ? new PipelineError(

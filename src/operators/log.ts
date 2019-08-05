@@ -6,7 +6,7 @@ import { getPrinter } from "../printer";
 export default async function log(
   args: string[],
   prevArgs: string[],
-  evalStack: EvaluationStack,
+  evalScope: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -18,7 +18,7 @@ export default async function log(
   return getPrinter(onLog)(
     args,
     prevArgs,
-    evalStack,
+    evalScope,
     input,
     mustPrint,
     onLog,

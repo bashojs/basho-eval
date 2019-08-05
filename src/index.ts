@@ -45,33 +45,33 @@ export class BashoEvalError {
 }
 
 function createProxy(): EvaluationStack {
-  const evalStack: EvaluationEnv[] = [{}];
+  const evalScope: EvaluationEnv[] = [{}];
 
   const handler = {
-    get: (evalStack: EvaluationEnv[], prop: string) => {
-      const item = (function loop(evalStack: EvaluationEnv[]): any {
-        const last = evalStack.slice(-1)[0];
+    get: (evalScope: EvaluationEnv[], prop: string) => {
+      const item = (function loop(evalScope: EvaluationEnv[]): any {
+        const last = evalScope.slice(-1)[0];
         return last && last[prop]
           ? last[prop]
-          : evalStack.length > 1
-          ? loop(evalStack.slice(0, -1))
+          : evalScope.length > 1
+          ? loop(evalScope.slice(0, -1))
           : undefined;
-      })(evalStack);
+      })(evalScope);
       return item;
     },
-    set: (evalStack: EvaluationEnv[], prop: string, value: any) => {
-      const outer = evalStack.slice(-1)[0];
+    set: (evalScope: EvaluationEnv[], prop: string, value: any) => {
+      const outer = evalScope.slice(-1)[0];
       outer[prop] = value;
       return true;
     }
   };
 
-  const proxy = new Proxy(evalStack, handler);
+  const proxy = new Proxy(evalScope, handler);
 
   return {
-    push: () => evalStack.push({}),
-    pop: () => evalStack.pop(),
-    value: evalStack,
+    create: () => evalScope.push({}),
+    unwind: () => evalScope.pop(),
+    value: evalScope,
     proxy
   };
 }
@@ -99,11 +99,11 @@ export async function createStackAndEvaluate(
   onLog: BashoLogFn = () => {},
   onWrite: BashoLogFn = () => {}
 ) {
-  const evalStack = createProxy();
+  const evalScope = createProxy();
   return await evaluateInternal(
     args,
     [],
-    evalStack,
+    evalScope,
     Seq.of(pipedValues.map(x => new PipelineValue(x))),
     mustPrint,
     onLog,
@@ -117,7 +117,7 @@ export async function createStackAndEvaluate(
 type OperatorFn = (
   args: string[],
   prevArgs: string[],
-  evalStack: EvaluationStack,
+  evalScope: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -130,7 +130,7 @@ type OperatorFn = (
 export async function evaluateInternal(
   args: string[],
   prevArgs: string[],
-  evalStack: EvaluationStack,
+  evalScope: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -208,7 +208,7 @@ export async function evaluateInternal(
           ? await handler[1](
               args,
               prevArgs,
-              evalStack,
+              evalScope,
               input,
               mustPrint,
               onLog,

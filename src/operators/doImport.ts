@@ -50,7 +50,7 @@ async function evalImport(filename: string, alias: string) {
 export default async function doImport(
   args: string[],
   prevArgs: string[],
-  evalStack: EvaluationStack,
+  evalScope: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -63,7 +63,7 @@ export default async function doImport(
   return await evaluateInternal(
     args.slice(3),
     args,
-    evalStack,
+    evalScope,
     input,
     mustPrint,
     onLog,

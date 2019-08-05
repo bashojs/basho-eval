@@ -6,7 +6,7 @@ import { evaluateInternal } from "..";
 export default async function combineStreams(
   args: string[],
   prevArgs: string[],
-  evalStack: EvaluationStack,
+  evalScope: EvaluationStack,
   input: Seq<PipelineItem>,
   mustPrint: boolean,
   onLog: BashoLogFn,
@@ -18,7 +18,7 @@ export default async function combineStreams(
   return await evaluateInternal(
     args.slice(2),
     args,
-    evalStack,
+    evalScope,
     input.map(x => {
       const streams = args[1].split(",");
       return new PipelineValue(
