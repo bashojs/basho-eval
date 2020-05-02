@@ -11,7 +11,12 @@ function execute(cmd: string): any {
     const child = child_process.exec(cmd, (err: any, result: any) => {
       resolve(result);
     });
-    child.stdin.end();
+
+    if (child.stdin) {
+      child.stdin.end();
+    } else {
+      throw new Error("Cannot open stdin.");
+    }
   });
 }
 
@@ -47,7 +52,7 @@ describe("basho", () => {
     const output = await evaluate(["1"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [1]
+      result: [1],
     });
   });
 
@@ -55,7 +60,7 @@ describe("basho", () => {
     const output = await evaluate(["true"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [true]
+      result: [true],
     });
   });
 
@@ -63,7 +68,7 @@ describe("basho", () => {
     const output = await evaluate(['"hello, world"']);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: ["hello, world"]
+      result: ["hello, world"],
     });
   });
 
@@ -71,7 +76,7 @@ describe("basho", () => {
     const output = await evaluate(["666", "-j", "`That number is ${x}`"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: ["That number is 666"]
+      result: ["That number is 666"],
     });
   });
 
@@ -79,7 +84,7 @@ describe("basho", () => {
     const output = await evaluate(["Promise.resolve(1)"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [1]
+      result: [1],
     });
   });
 
@@ -87,7 +92,7 @@ describe("basho", () => {
     const output = await evaluate(["[1,2,3,4]"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [1, 2, 3, 4]
+      result: [1, 2, 3, 4],
     });
   });
 
@@ -95,7 +100,7 @@ describe("basho", () => {
     const output = await evaluate(["{ name: 'kai' }"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [{ name: "kai" }]
+      result: [{ name: "kai" }],
     });
   });
 
@@ -103,7 +108,7 @@ describe("basho", () => {
     const output = await evaluate(["[{ name: 'kai' }, { name: 'niki' }]"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [{ name: "kai" }, { name: "niki" }]
+      result: [{ name: "kai" }, { name: "niki" }],
     });
   });
 
@@ -111,7 +116,7 @@ describe("basho", () => {
     const output = await evaluate(["-p", "[1,2,3,4]"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: false,
-      result: [1, 2, 3, 4]
+      result: [1, 2, 3, 4],
     });
   });
 
@@ -119,7 +124,7 @@ describe("basho", () => {
     const output = await evaluate(["[1,2,3,4]", "-j", "x**2"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [1, 4, 9, 16]
+      result: [1, 4, 9, 16],
     });
   });
 
@@ -127,7 +132,7 @@ describe("basho", () => {
     const output = await evaluate(["x+1"], ["a", "b", "c", "d"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: ["a1", "b1", "c1", "d1"]
+      result: ["a1", "b1", "c1", "d1"],
     });
   });
 
@@ -141,7 +146,7 @@ describe("basho", () => {
     );
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [1, 4, 9, 16]
+      result: [1, 4, 9, 16],
     });
     logMessages.should.deepEqual([11, 12, 13, 14]);
   });
@@ -157,7 +162,7 @@ describe("basho", () => {
     );
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [1, 4, 9, 16]
+      result: [1, 4, 9, 16],
     });
     writeMessages.should.deepEqual([11, 12, 13, 14]);
   });
@@ -166,7 +171,7 @@ describe("basho", () => {
     const output = await evaluate(["[[1,2,3], [2,3,4]]", "-j", "x[0]+10"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [11, 12]
+      result: [11, 12],
     });
   });
 
@@ -174,7 +179,7 @@ describe("basho", () => {
     const output = await evaluate(["[1,2,3,4]", "-a", "-j", "x.length"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [4]
+      result: [4],
     });
   });
 
@@ -182,7 +187,10 @@ describe("basho", () => {
     const output = await evaluate([`["a,b", "c,d"]`, "-j", `x.split(",")`]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [["a", "b"], ["c", "d"]]
+      result: [
+        ["a", "b"],
+        ["c", "d"],
+      ],
     });
   });
 
@@ -190,7 +198,7 @@ describe("basho", () => {
     const output = await evaluate(["[1,2,3,4]", "-f", "x > 2"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [3, 4]
+      result: [3, 4],
     });
   });
 
@@ -198,7 +206,7 @@ describe("basho", () => {
     const output = await evaluate(["[1,2,3,4]", "-r", "acc + x", "0"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [10]
+      result: [10],
     });
   });
 
@@ -206,7 +214,7 @@ describe("basho", () => {
     const output = await evaluate(["[1,2,3]", "-m", "[x+10, x+20]"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [11, 21, 12, 22, 13, 23]
+      result: [11, 21, 12, 22, 13, 23],
     });
   });
 
@@ -214,7 +222,7 @@ describe("basho", () => {
     const output = await evaluate(["[1,2,3,4]", "-t", "x > 2", "-j", "x*10"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [10, 20]
+      result: [10, 20],
     });
   });
 
@@ -224,11 +232,11 @@ describe("basho", () => {
       "-t",
       "x > 2",
       "-j",
-      "x*10"
+      "x*10",
     ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [10, 20]
+      result: [10, 20],
     });
   });
 
@@ -239,11 +247,11 @@ describe("basho", () => {
       "./dist/test/square.js",
       "sqr",
       "-j",
-      "sqr(x)"
+      "sqr(x)",
     ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [100]
+      result: [100],
     });
   });
 
@@ -255,11 +263,11 @@ describe("basho", () => {
       "path",
       "pathMod",
       "-j",
-      "pathMod.join.apply(pathMod, x)"
+      "pathMod.join.apply(pathMod, x)",
     ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: ["/a/b/c"]
+      result: ["/a/b/c"],
     });
   });
 
@@ -271,11 +279,11 @@ describe("basho", () => {
       "left-pad",
       "leftPad",
       "-j",
-      "leftPad(17, 5, 0)"
+      "leftPad(17, 5, 0)",
     ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: ["00017"]
+      result: ["00017"],
     });
   });
 
@@ -283,7 +291,7 @@ describe("basho", () => {
     const output = await evaluate(["10", "-e", "echo ${x}"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: ["10"]
+      result: ["10"],
     });
   });
 
@@ -291,7 +299,7 @@ describe("basho", () => {
     const output = await evaluate(['"la la.txt"', "-e", "echo ${x}"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: ["la la.txt"]
+      result: ["la la.txt"],
     });
   });
 
@@ -299,7 +307,7 @@ describe("basho", () => {
     const output = await evaluate(["{ name: 'kai' }", "-e", "echo ${x.name}"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: ["kai"]
+      result: ["kai"],
     });
   });
 
@@ -307,7 +315,7 @@ describe("basho", () => {
     const output = await evaluate(["10", "-e", "echo ${x};echo ${x};"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [["10", "10"]]
+      result: [["10", "10"]],
     });
   });
 
@@ -315,7 +323,7 @@ describe("basho", () => {
     const output = await evaluate(["10", "-e", 'echo "${x}\n${x}"']);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [["10", "10"]]
+      result: [["10", "10"]],
     });
   });
 
@@ -323,7 +331,7 @@ describe("basho", () => {
     const output = await evaluate(["[10, 11, 12]", "-e", "echo N${x}"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: ["N10", "N11", "N12"]
+      result: ["N10", "N11", "N12"],
     });
   });
 
@@ -334,11 +342,11 @@ describe("basho", () => {
       "add1",
       "x=>x+1",
       "-j",
-      "k.add1(x)"
+      "k.add1(x)",
     ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [11, 12, 13]
+      result: [11, 12, 13],
     });
   });
 
@@ -352,11 +360,11 @@ describe("basho", () => {
       "multiply",
       "x => x * k.multiplier",
       "-j",
-      "k.multiply(x)"
+      "k.multiply(x)",
     ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [1000, 1100, 1200]
+      result: [1000, 1100, 1200],
     });
   });
 
@@ -367,11 +375,11 @@ describe("basho", () => {
       "ECHO_CMD",
       "'echo'",
       "-e",
-      "${k.ECHO_CMD} N${x}"
+      "${k.ECHO_CMD} N${x}",
     ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: ["N10", "N11", "N12"]
+      result: ["N10", "N11", "N12"],
     });
   });
 
@@ -383,11 +391,11 @@ describe("basho", () => {
       "x*10",
       "--endsub",
       "-j",
-      "k.multiply(x)"
+      "k.multiply(x)",
     ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [100, 110, 120]
+      result: [100, 110, 120],
     });
   });
 
@@ -401,11 +409,11 @@ describe("basho", () => {
       "x*10",
       "--endsub",
       "-j",
-      "k.multiply(x)"
+      "k.multiply(x)",
     ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [1000, 1100, 1200]
+      result: [1000, 1100, 1200],
     });
   });
 
@@ -424,11 +432,11 @@ describe("basho", () => {
       "k.square(x)",
       "--endsub",
       "-j",
-      "k.multiply(x)"
+      "k.multiply(x)",
     ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [10000, 12100, 14400]
+      result: [10000, 12100, 14400],
     });
   });
 
@@ -437,11 +445,11 @@ describe("basho", () => {
       "-e",
       "echo 10",
       "-j",
-      "`The answer is ${x}`"
+      "`The answer is ${x}`",
     ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: ["The answer is 10"]
+      result: ["The answer is 10"],
     });
   });
 
@@ -450,11 +458,11 @@ describe("basho", () => {
       "-e",
       'echo "10\n10"',
       "-j",
-      "`The answer is ${x}`"
+      "`The answer is ${x}`",
     ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: ["The answer is 10", "The answer is 10"]
+      result: ["The answer is 10", "The answer is 10"],
     });
   });
 
@@ -468,11 +476,11 @@ describe("basho", () => {
       "-n",
       "add2",
       "-j",
-      "x+10"
+      "x+10",
     ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [23, 33, 43, 53]
+      result: [23, 33, 43, 53],
     });
   });
 
@@ -488,11 +496,16 @@ describe("basho", () => {
       "-n",
       "add2",
       "-c",
-      "add1,add2"
+      "add1,add2",
     ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [[11, 13], [21, 23], [31, 33], [41, 43]]
+      result: [
+        [11, 13],
+        [21, 23],
+        [31, 33],
+        [41, 43],
+      ],
     });
   });
 
@@ -508,11 +521,11 @@ describe("basho", () => {
       "-n",
       "add2",
       "-s",
-      "add1"
+      "add1",
     ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [11, 21, 31, 41]
+      result: [11, 21, 31, 41],
     });
   });
 
@@ -522,11 +535,11 @@ describe("basho", () => {
       "-j",
       "x.split(',')",
       "--error",
-      "'skipped'"
+      "'skipped'",
     ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [["a", "b"], "skipped", ["c", "d"]]
+      result: [["a", "b"], "skipped", ["c", "d"]],
     });
   });
 
@@ -541,11 +554,11 @@ describe("basho", () => {
       "x+2",
       "-g",
       "add1",
-      "x<30"
+      "x<30",
     ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [32]
+      result: [32],
     });
   });
 
@@ -560,11 +573,11 @@ describe("basho", () => {
       "x+2",
       "-g",
       "add1",
-      "x<30"
+      "x<30",
     ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [32, 32, 33]
+      result: [32, 32, 33],
     });
   });
 
@@ -579,11 +592,11 @@ describe("basho", () => {
       "fib",
       "x[1]<300",
       "-j",
-      "x[0]"
+      "x[0]",
     ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: [[0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233]]
+      result: [[0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233]],
     });
   });
 });
