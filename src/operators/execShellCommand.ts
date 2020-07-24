@@ -8,14 +8,7 @@ import { evalWithCatch } from "../eval";
 import exception from "../exception";
 import { BashoEvalError, evaluateInternal } from "..";
 
-
 const exec = util.promisify(child_process.exec);
-
-function shellEscape(str: string): string {
-  return str
-    .replace(/([^A-Za-z0-9_\-.,:\/@\n])/g, "\\$1")
-    .replace(/\n/g, "'\n'");
-}
 
 export async function shellCmd(
   template: string,
@@ -34,16 +27,16 @@ export async function shellCmd(
                 new PipelineError(
                   `Failed to execute shell command: ${template}`,
                   cmd.error
-                )
+                ),
               ])
             : await (async () => {
                 const { stdout } = await exec(cmd);
                 return Seq.of(
                   stdout
                     .split("\n")
-                    .filter(x => x !== "")
-                    .map(x => x.replace(/\n$/, ""))
-                    .map(i => new PipelineValue(i))
+                    .filter((x) => x !== "")
+                    .map((x) => x.replace(/\n$/, ""))
+                    .map((i) => new PipelineValue(i))
                 );
               })();
         } catch (ex) {
@@ -51,7 +44,7 @@ export async function shellCmd(
             new PipelineError(
               `Failed to execute shell command: ${template}`,
               ex
-            )
+            ),
           ]);
         }
       })()
@@ -64,15 +57,12 @@ export async function shellCmd(
               ? await (async () => {
                   try {
                     const value = await x.value;
-                    const cmd = await fn(
-                      typeof value === "string" ? shellEscape(value) : value,
-                      i
-                    );
+                    const cmd = await fn(value, i);
                     const { stdout } = await exec(cmd);
                     const items = stdout
                       .split("\n")
-                      .filter(x => x !== "")
-                      .map(x => x.replace(/\n$/, ""));
+                      .filter((x) => x !== "")
+                      .map((x) => x.replace(/\n$/, ""));
                     return new PipelineValue(
                       items.length === 1 ? items[0] : items,
                       x
@@ -89,7 +79,6 @@ export async function shellCmd(
         );
       })();
 }
-
 
 export default async function execShellCommand(
   args: string[],
@@ -108,13 +97,7 @@ export default async function execShellCommand(
     args.slice(2),
     args,
     evalScope,
-    await shellCmd(
-      expression,
-      evalScope,
-      input,
-      args.slice(2),
-      isInitialInput
-    ),
+    await shellCmd(expression, evalScope, input, args.slice(2), isInitialInput),
     mustPrint,
     onLog,
     onWrite,
