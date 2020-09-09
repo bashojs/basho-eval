@@ -27,6 +27,8 @@ import seek from "./operators/seek";
 import subroutine from "./operators/subroutine";
 import terminate from "./operators/terminate";
 import write from "./operators/write";
+import asString from "./operators/asString";
+import asJson from "./operators/asJson";
 
 export { PipelineValue, PipelineError } from "./pipeline";
 
@@ -169,6 +171,9 @@ export async function evaluateInternal(
     /* JS expressions */
     [x => x === "-j", jsExpression(1)],
 
+    /* Treats input as JSON */
+    [x => x === "--json", asJson],
+
     /* Logging */
     [x => x === "-l", log],
 
@@ -189,6 +194,9 @@ export async function evaluateInternal(
 
     /* Seek a named result */
     [x => x === "-s", seek],
+
+    /* Convert input to a single string */
+    [x => x === "--str", asString],
 
     /* Define a subroutine */
     [x => x === "--sub", subroutine],

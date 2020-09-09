@@ -183,6 +183,22 @@ describe("basho", () => {
     });
   });
 
+  it(`Receives input as a single string`, async () => {
+    const output = await evaluate([`['{', '"a": 1,', '"b":2', '}']`, "--str", "-j", "JSON.parse(x).a"]);
+    (await toResult(output)).should.deepEqual({
+      mustPrint: true,
+      result: [1],
+    });
+  });
+
+  it(`Parses input as JSON`, async () => {
+    const output = await evaluate([`['{', '"a": 1,', '"b":2', '}']`, "--json", "-j", "x.a"]);
+    (await toResult(output)).should.deepEqual({
+      mustPrint: true,
+      result: [1],
+    });
+  });
+
   it(`Handles expressions with quotes`, async () => {
     const output = await evaluate([`["a,b", "c,d"]`, "-j", `x.split(",")`]);
     (await toResult(output)).should.deepEqual({
