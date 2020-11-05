@@ -12,10 +12,7 @@
       "stopOnEntry": false,
       "args": ["--no-timeouts", "dist/test/test.js"],
       "cwd": "${workspaceRoot}",
-      "preLaunchTask": "transpile",
-      "env": {
-        "CHIMPANZEE_DEBUG": "yep"
-      }
+      "preLaunchTask": "transpile"
     }
   ]
 }
