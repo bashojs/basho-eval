@@ -1,10 +1,11 @@
 {
   "name": "basho-eval",
-  "version": "4.2.1",
-  "author": "Isotropy Team<isotropy@agilehead.com>",
-  "contributors": [
-    "Jeswin Kumar<jeswinpk@agilehead.com>"
-  ],
+  "version": "4.2.2",
+  "author": "Jeswin Kumar<jeswinpk@agilehead.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bashojs/basho-eval"
+  },
   "scripts": {
     "transpile": "./build.sh",
     "test": "./build.sh && mocha dist/test/test.js"
