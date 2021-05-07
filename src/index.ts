@@ -207,7 +207,7 @@ export async function evaluateInternal(
     /* Writing */
     [x => x === "-w", write],
 
-    /* Everything else as JS expressions */
+    /* Everything else as a JS expression */
     [x => isFirstParam, jsExpression(0)]
   ];
 

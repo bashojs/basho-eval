@@ -18,10 +18,7 @@ export default async function onError(
 ) {
   const expression = args[1];
   const newSeq = input.map(async (x, i) => {
-    const fn = await evalWithCatch(
-      `(x, i) => (${expression})`,
-      evalScope
-    );
+    const fn = await evalWithCatch(`(x, i) => (${expression})`, evalScope);
     return x instanceof PipelineError
       ? await (async () => {
           const result = await fn(x, i);
@@ -44,8 +41,8 @@ export default async function onError(
     mustPrint,
     onLog,
     onWrite,
-    false,
-    false,
+    isInitialInput,
+    isFirstParam,
     expressionStack
   );
 }

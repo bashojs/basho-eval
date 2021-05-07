@@ -39,7 +39,7 @@ export function getPrinter(printFn: BashoLogFn) {
       onLog,
       onWrite,
       isInitialInput,
-      isFirstParam,
+      false,
       expressionStack
     );
   };

@@ -1,6 +1,6 @@
 {
   "name": "basho-eval",
-  "version": "4.2.4",
+  "version": "4.2.5",
   "author": "Jeswin Kumar<jeswinpk@agilehead.com>",
   "repository": {
     "type": "git",
@@ -13,7 +13,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "dependencies": {
-    "@types/node": "^14.14.37",
+    "@types/node": "^15.0.2",
     "lazily-async": "^1.0.3"
   },
   "devDependencies": {

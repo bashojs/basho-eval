@@ -28,8 +28,8 @@ export default async function asString(
     mustPrint,
     onLog,
     onWrite,
-    false,
-    false,
+    isInitialInput,
+    isFirstParam,
     expressionStack
   );
 }

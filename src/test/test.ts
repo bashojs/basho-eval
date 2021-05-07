@@ -351,7 +351,21 @@ describe("basho", () => {
     });
   });
 
-  it(`Can use a named expression in a JS Expression`, async () => {
+  it(`Defines a reusable expression`, async () => {
+    const output = await evaluate([
+      "-d",
+      "onehundred",
+      "100",
+      "-j",
+      "k.onehundred",
+    ]);
+    (await toResult(output)).should.deepEqual({
+      mustPrint: true,
+      result: [100],
+    });
+  });
+
+  it(`Can use a reusable expression in a JS Expression`, async () => {
     const output = await evaluate([
       "[10, 11, 12]",
       "-d",
@@ -366,7 +380,7 @@ describe("basho", () => {
     });
   });
 
-  it(`Can use a named expression in a subsequent named expression`, async () => {
+  it(`Can use a reusable expression in a subsequent reusable expression`, async () => {
     const output = await evaluate([
       "[10, 11, 12]",
       "-d",
@@ -384,7 +398,7 @@ describe("basho", () => {
     });
   });
 
-  it(`Can use a named expression in a Shell Command`, async () => {
+  it(`Can use a reusable expression in a Shell Command`, async () => {
     const output = await evaluate([
       "[10, 11, 12]",
       "-d",
@@ -482,7 +496,7 @@ describe("basho", () => {
     });
   });
 
-  it(`Creates a named result`, async () => {
+  it(`Creates a named stage`, async () => {
     const output = await evaluate([
       "[10,20,30,40]",
       "-j",
@@ -500,7 +514,7 @@ describe("basho", () => {
     });
   });
 
-  it(`Combines named results`, async () => {
+  it(`Combines named stages`, async () => {
     const output = await evaluate([
       "[10,20,30,40]",
       "-j",
@@ -525,7 +539,7 @@ describe("basho", () => {
     });
   });
 
-  it(`Seek a named result`, async () => {
+  it(`Seek a named stage`, async () => {
     const output = await evaluate([
       "[10,20,30,40]",
       "-j",

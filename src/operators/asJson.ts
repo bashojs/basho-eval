@@ -30,8 +30,8 @@ export default async function asJson(
     mustPrint,
     onLog,
     onWrite,
-    false,
-    false,
+    isInitialInput,
+    isFirstParam,
     expressionStack
   );
 }

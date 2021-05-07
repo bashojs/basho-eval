@@ -86,8 +86,8 @@ export default async function subroutine(
     mustPrint,
     onLog,
     onWrite,
-    false,
-    false,
+    isInitialInput,
+    isFirstParam,
     expressionStack
   );
 }
