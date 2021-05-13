@@ -166,7 +166,7 @@ export async function evaluateInternal(
     [x => x === "-g", recurse],
 
     /* Named Export */
-    [x => x === "--import", doImport],
+    [x => x === "--import" || x === "-i", doImport],
 
     /* JS expressions */
     [x => x === "-j", jsExpression(1)],

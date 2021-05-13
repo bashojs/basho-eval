@@ -184,7 +184,12 @@ describe("basho", () => {
   });
 
   it(`Receives input as a single string`, async () => {
-    const output = await evaluate([`['{', '"a": 1,', '"b":2', '}']`, "--str", "-j", "JSON.parse(x).a"]);
+    const output = await evaluate([
+      `['{', '"a": 1,', '"b":2', '}']`,
+      "--str",
+      "-j",
+      "JSON.parse(x).a",
+    ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
       result: [1],
@@ -192,7 +197,12 @@ describe("basho", () => {
   });
 
   it(`Parses input as JSON`, async () => {
-    const output = await evaluate([`['{', '"a": 1,', '"b":2', '}']`, "--json", "-j", "x.a"]);
+    const output = await evaluate([
+      `['{', '"a": 1,', '"b":2', '}']`,
+      "--json",
+      "-j",
+      "x.a",
+    ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
       result: [1],
@@ -271,19 +281,21 @@ describe("basho", () => {
     });
   });
 
-  it(`Calls a node module (global)`, async () => {
-    const output = await evaluate([
-      `["/a", "b", "c"]`,
-      "-a",
-      "--import",
-      "path",
-      "pathMod",
-      "-j",
-      "pathMod.join.apply(pathMod, x)",
-    ]);
-    (await toResult(output)).should.deepEqual({
-      mustPrint: true,
-      result: ["/a/b/c"],
+  ["-i", "--import"].forEach((argName) => {
+    it(`Calls a node std lib module with ${argName}`, async () => {
+      const output = await evaluate([
+        `["/a", "b", "c"]`,
+        "-a",
+        argName,
+        "path",
+        "pathMod",
+        "-j",
+        "pathMod.join.apply(pathMod, x)",
+      ]);
+      (await toResult(output)).should.deepEqual({
+        mustPrint: true,
+        result: ["/a/b/c"],
+      });
     });
   });
 
