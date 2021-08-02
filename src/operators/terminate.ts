@@ -18,7 +18,7 @@ export default async function terminate(
 ) {
   const expression = args[1];
   async function* asyncGenerator(): AsyncIterableIterator<PipelineItem> {
-    const fn = await evalWithCatch(`(x, i) => (${expression})`, evalScope);
+    const fn = evalWithCatch(`(x, i) => (${expression})`, evalScope);
     let i = 0;
     for await (const x of input) {
       if (x instanceof PipelineValue) {

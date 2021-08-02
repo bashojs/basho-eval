@@ -11,7 +11,7 @@ async function doFilter(
   input: Seq<PipelineItem>
 ): Promise<Seq<PipelineItem>> {
   const code = `(x, i) => (${exp})`;
-  const fn = await evalWithCatch(code, evalScope);
+  const fn = evalWithCatch(code, evalScope);
   return input.filter(
     async (x, i): Promise<boolean> =>
       x instanceof PipelineError

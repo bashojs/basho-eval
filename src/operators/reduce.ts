@@ -12,9 +12,9 @@ async function doReduce(
   initialValueExp: string
 ): Promise<PipelineItem> {
   const code = `async (acc, x, i) => (${exp})`;
-  const fn = await evalWithCatch(code, evalScope);
+  const fn = evalWithCatch(code, evalScope);
   const initialValueCode = `async () => (${initialValueExp})`;
-  const getInitialValue = await evalWithCatch(initialValueCode, evalScope);
+  const getInitialValue = evalWithCatch(initialValueCode, evalScope);
 
   const initialValue = await getInitialValue();
   const output =

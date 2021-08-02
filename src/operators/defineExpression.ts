@@ -18,8 +18,8 @@ export default async function defineExpression(
 ) {
   const name = args[1];
   const expression = args[2];
+  //evalScope.proxy[name] = evalWithCatch(expression, evalScope);
   evalScope.proxy[name] = eval(`k => (${expression})`)(evalScope.proxy);
-  evalWithCatch(expression, evalScope);
   return await evaluateInternal(
     args.slice(3),
     args,

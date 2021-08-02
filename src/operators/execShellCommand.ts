@@ -17,7 +17,7 @@ export async function shellCmd(
   nextArgs: string[],
   isInitialInput: boolean
 ): Promise<Seq<PipelineItem>> {
-  const fn = await evalWithCatch(`(x, i) => \`${template}\``, evalScope);
+  const fn = evalWithCatch(`(x, i) => \`${template}\``, evalScope);
   return isInitialInput
     ? await (async () => {
         try {

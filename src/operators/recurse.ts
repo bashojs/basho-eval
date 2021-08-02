@@ -19,7 +19,7 @@ export default async function recurse(
   const name = args[1];
   const expression = args[2];
   const recursePoint = expressionStack.find(e => e.name === name);
-  const fn = await evalWithCatch(`(x, i) => (${expression})`, evalScope);
+  const fn = evalWithCatch(`(x, i) => (${expression})`, evalScope);
   const newSeq = input.map(async (x, i) =>
     recursePoint
       ? x instanceof PipelineValue

@@ -18,7 +18,7 @@ export function getPrinter(printFn: BashoLogFn) {
     expressionStack: Array<ExpressionStackEntry>
   ) => {
     const expression = args[1];
-    const fn = await evalWithCatch(`(x, i) => (${expression})`, evalScope);
+    const fn = evalWithCatch(`(x, i) => (${expression})`, evalScope);
     const newSeq = input.map(async (x, i) => {
       if (x instanceof PipelineValue) {
         const result = await fn(await x.value, i);

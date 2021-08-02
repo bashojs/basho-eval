@@ -9,10 +9,10 @@ async function unwrapNestedPromises(obj: any): Promise<any> {
   return resolved === obj ? obj : await unwrapNestedPromises(resolved);
 }
 
-export async function evalWithCatch(
+export function evalWithCatch(
   exp: string,
   evalScope: EvaluationStack
-): Promise<(...args: Array<any>) => any> {
+): (...args: Array<any>) => any {
   try {
     const fn = eval(`k => (${exp})`)(evalScope.proxy);
     return async function() {
@@ -40,7 +40,7 @@ export async function evalExpression(
   return isInitialInput
     ? await (async () => {
         const code = `() => (${exp})`;
-        const fn = await evalWithCatch(code, evalScope);
+        const fn = evalWithCatch(code, evalScope);
         const input = await fn();
         return input instanceof BashoEvalError
           ? Seq.of([
@@ -61,7 +61,7 @@ export async function evalExpression(
               ? x
               : x instanceof PipelineValue
               ? await (async () => {
-                  const fn = await evalWithCatch(code, evalScope);
+                  const fn = evalWithCatch(code, evalScope);
                   const result = await fn(await x.value, i);
                   return result instanceof BashoEvalError
                     ? new PipelineError(
