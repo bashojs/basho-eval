@@ -377,6 +377,20 @@ describe("basho", () => {
     });
   });
 
+  it(`Defines an expression containing a zero`, async () => {
+    const output = await evaluate([
+      "-d",
+      "justzero",
+      "0",
+      "-j",
+      "k.justzero",
+    ]);
+    (await toResult(output)).should.deepEqual({
+      mustPrint: true,
+      result: [0],
+    });
+  });
+
   it(`Can use a reusable expression in a JS Expression`, async () => {
     const output = await evaluate([
       "[10, 11, 12]",

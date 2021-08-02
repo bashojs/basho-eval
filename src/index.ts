@@ -55,7 +55,7 @@ function createProxy(): EvaluationStack {
     get: (evalScope: EvaluationEnv[], prop: string) => {
       const item = (function loop(evalScope: EvaluationEnv[]): any {
         const last = evalScope.slice(-1)[0];
-        return last && last[prop]
+        return last && last[prop] !== undefined
           ? last[prop]
           : evalScope.length > 1
           ? loop(evalScope.slice(0, -1))
