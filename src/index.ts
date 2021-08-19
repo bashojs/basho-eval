@@ -1,36 +1,36 @@
 import { Seq } from "lazily-async";
-import exception from "./exception";
+import exception from "./exception.js";
 import {
   EvaluationStack,
   BashoLogFn,
   ExpressionStackEntry,
   BashoEvaluationResult,
   EvaluationEnv,
-} from "./types";
-import { PipelineValue, PipelineItem } from "./pipeline";
-import jsExpression from "./operators/jsExpression";
-import errorHandler from "./operators/errorHandler";
-import toArray from "./operators/toArray";
-import combineStreams from "./operators/combineStreams";
-import defineExpression from "./operators/defineExpression";
-import execShellCommand from "./operators/execShellCommand";
-import onError from "./operators/onError";
-import filter from "./operators/filter";
-import recurse from "./operators/recurse";
-import { defaultImport, namedImport } from "./operators/doImport";
-import log from "./operators/log";
-import flatMap from "./operators/flatMap";
-import namedExpression from "./operators/namedExpression";
-import print from "./operators/print";
-import reduce from "./operators/reduce";
-import seek from "./operators/seek";
-import subroutine from "./operators/subroutine";
-import terminate from "./operators/terminate";
-import write from "./operators/write";
-import asString from "./operators/asString";
-import asJson from "./operators/asJson";
+} from "./types.js";
+import { PipelineValue, PipelineItem } from "./pipeline.js";
+import jsExpression from "./operators/jsExpression.js";
+import errorHandler from "./operators/errorHandler.js";
+import toArray from "./operators/toArray.js";
+import combineStreams from "./operators/combineStreams.js";
+import defineExpression from "./operators/defineExpression.js";
+import execShellCommand from "./operators/execShellCommand.js";
+import onError from "./operators/onError.js";
+import filter from "./operators/filter.js";
+import recurse from "./operators/recurse.js";
+import { defaultImport, namedImport } from "./operators/doImport.js";
+import log from "./operators/log.js";
+import flatMap from "./operators/flatMap.js";
+import namedExpression from "./operators/namedExpression.js";
+import print from "./operators/print.js";
+import reduce from "./operators/reduce.js";
+import seek from "./operators/seek.js";
+import subroutine from "./operators/subroutine.js";
+import terminate from "./operators/terminate.js";
+import write from "./operators/write.js";
+import asString from "./operators/asString.js";
+import asJson from "./operators/asJson.js";
 
-export { PipelineValue, PipelineError } from "./pipeline";
+export { PipelineValue, PipelineError } from "./pipeline.js";
 
 export class QuotedExpression {
   str: string[];

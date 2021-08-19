@@ -1,8 +1,8 @@
-import { EvaluationStack as EvaluationScope, BashoLogFn, ExpressionStackEntry } from "../types";
+import { EvaluationStack as EvaluationScope, BashoLogFn, ExpressionStackEntry } from "../types.js";
 import { Seq } from "lazily-async";
-import { PipelineItem, PipelineError, PipelineValue } from "../pipeline";
-import { evalWithCatch } from "../eval";
-import { evaluateInternal } from "..";
+import { PipelineItem, PipelineError, PipelineValue } from "../pipeline.js";
+import { evalWithCatch } from "../eval.js";
+import { evaluateInternal } from "../index.js";
 
 export default async function recurse(
   args: string[],

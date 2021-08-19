@@ -1,12 +1,12 @@
-import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
+import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types.js";
 import { Seq } from "lazily-async";
-import { PipelineItem, PipelineValue, PipelineError } from "../pipeline";
+import { PipelineItem, PipelineValue, PipelineError } from "../pipeline.js";
 import child_process from "child_process";
 import * as util from "util";
 
-import { evalWithCatch } from "../eval";
-import exception from "../exception";
-import { BashoEvalError, evaluateInternal } from "..";
+import { evalWithCatch } from "../eval.js";
+import exception from "../exception.js";
+import { BashoEvalError, evaluateInternal } from "../index.js";
 
 const exec = util.promisify(child_process.exec);
 

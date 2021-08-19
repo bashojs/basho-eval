@@ -1,7 +1,7 @@
-import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
+import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types.js";
 import { Seq } from "lazily-async";
-import { PipelineItem } from "../pipeline";
-import { getPrinter } from "../printer";
+import { PipelineItem } from "../pipeline.js";
+import { getPrinter } from "../printer.js";
 
 export default async function write(
   args: string[],

@@ -1,9 +1,9 @@
-import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
+import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types.js";
 import { Seq } from "lazily-async";
-import { PipelineItem, PipelineError, PipelineValue } from "../pipeline";
-import { evalWithCatch } from "../eval";
-import exception from "../exception";
-import { BashoEvalError, evaluateInternal } from "..";
+import { PipelineItem, PipelineError, PipelineValue } from "../pipeline.js";
+import { evalWithCatch } from "../eval.js";
+import exception from "../exception.js";
+import { BashoEvalError, evaluateInternal } from "../index.js";
 
 async function doFlatMap(
   exp: string,

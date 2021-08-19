@@ -1,8 +1,8 @@
-import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
+import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types.js";
 import { Seq } from "lazily-async";
-import { PipelineItem, PipelineValue, PipelineError } from "../pipeline";
-import exception from "../exception";
-import { evaluateInternal } from "..";
+import { PipelineItem, PipelineValue, PipelineError } from "../pipeline.js";
+import exception from "../exception.js";
+import { evaluateInternal } from "../index.js";
 
 interface ISubroutine {
   name: string;

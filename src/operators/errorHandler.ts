@@ -1,7 +1,7 @@
-import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
+import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types.js";
 import { Seq } from "lazily-async";
-import { PipelineItem } from "../pipeline";
-import { evaluateInternal } from "..";
+import { PipelineItem } from "../pipeline.js";
+import { evaluateInternal } from "../index.js";
 
 export default async function errorHandler(
   args: string[],

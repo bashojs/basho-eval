@@ -1,8 +1,8 @@
 import { Seq } from "lazily-async";
-import exception from "./exception";
-import { EvaluationStack } from "./types";
-import { PipelineItem, PipelineError, PipelineValue } from "./pipeline";
-import { BashoEvalError } from ".";
+import exception from "./exception.js";
+import { EvaluationStack } from "./types.js";
+import { PipelineItem, PipelineError, PipelineValue } from "./pipeline.js";
+import { BashoEvalError } from "./index.js";
 
 async function unwrapNestedPromises(obj: any): Promise<any> {
   const resolved = Promise.resolve(obj);

@@ -2,9 +2,9 @@ import "./preload";
 import "mocha";
 import "should";
 import child_process from "child_process";
-import { evaluate } from "..";
-import { BashoEvaluationResult } from "../types";
-import { PipelineValue } from "../pipeline";
+import { evaluate } from "../index.js";
+import { BashoEvaluationResult } from "../types.js";
+import { PipelineValue } from "../pipeline.js";
 
 function execute(cmd: string): any {
   return new Promise((resolve, reject) => {

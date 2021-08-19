@@ -1,10 +1,10 @@
 import path from "path";
-import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
+import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types.js";
 import { Seq } from "lazily-async";
 import * as util from "util";
 import * as fs from "fs";
-import { PipelineItem } from "../pipeline";
-import { evaluateInternal } from "..";
+import { PipelineItem } from "../pipeline.js";
+import { evaluateInternal } from "../index.js";
 
 const stat = util.promisify(fs.stat);
 

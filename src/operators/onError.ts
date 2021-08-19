@@ -1,8 +1,8 @@
-import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
+import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types.js";
 import { Seq } from "lazily-async";
-import { PipelineItem, PipelineError, PipelineValue } from "../pipeline";
-import { evalWithCatch } from "../eval";
-import { BashoEvalError, evaluateInternal } from "..";
+import { PipelineItem, PipelineError, PipelineValue } from "../pipeline.js";
+import { evalWithCatch } from "../eval.js";
+import { BashoEvalError, evaluateInternal } from "../index.js";
 
 export default async function onError(
   args: string[],

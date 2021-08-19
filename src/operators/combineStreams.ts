@@ -1,7 +1,7 @@
-import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
+import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types.js";
 import { Seq } from "lazily-async";
-import { PipelineItem, PipelineValue, findNamedValue } from "../pipeline";
-import { evaluateInternal } from "..";
+import { PipelineItem, PipelineValue, findNamedValue } from "../pipeline.js";
+import { evaluateInternal } from "../index.js";
 
 export default async function combineStreams(
   args: string[],

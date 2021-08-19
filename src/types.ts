@@ -1,4 +1,4 @@
-import { PipelineItem } from "./pipeline";
+import { PipelineItem } from "./pipeline.js";
 import { Seq } from "lazily-async";
 
 export type ExpressionStackEntry = {
