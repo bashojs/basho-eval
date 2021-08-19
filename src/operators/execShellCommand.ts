@@ -1,7 +1,7 @@
 import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types";
 import { Seq } from "lazily-async";
 import { PipelineItem, PipelineValue, PipelineError } from "../pipeline";
-import child_process = require("child_process");
+import child_process from "child_process";
 import * as util from "util";
 
 import { evalWithCatch } from "../eval";

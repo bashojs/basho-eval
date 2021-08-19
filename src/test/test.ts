@@ -281,6 +281,22 @@ describe("basho", () => {
     });
   });
 
+  it(`Calls a named export in an external file`, async () => {
+    const output = await evaluate([
+      "10",
+      "--named-import",
+      "./dist/test/square.js",
+      "namedSquare",
+      "sqr",
+      "-j",
+      "sqr(x)",
+    ]);
+    (await toResult(output)).should.deepEqual({
+      mustPrint: true,
+      result: [100],
+    });
+  });
+
   ["-i", "--import"].forEach((argName) => {
     it(`Calls a node std lib module with ${argName}`, async () => {
       const output = await evaluate([
