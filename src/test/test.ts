@@ -1,4 +1,4 @@
-import "./preload";
+import "./preload.js";
 import "mocha";
 import "should";
 import child_process from "child_process";
@@ -320,14 +320,14 @@ describe("basho", () => {
       `["/a", "b", "c"]`,
       "-a",
       "--import",
-      "left-pad",
-      "leftPad",
+      "path",
+      "path",
       "-j",
-      "leftPad(17, 5, 0)",
+      "path.basename(\"/home/jeswin/boom\")",
     ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
-      result: ["00017"],
+      result: ["boom"],
     });
   });
 
