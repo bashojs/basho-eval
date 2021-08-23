@@ -222,6 +222,19 @@ describe("basho", () => {
     });
   });
 
+  it(`Parses input as TOML`, async () => {
+    const output = await evaluate([
+      `['title = "TOML Example"']`,
+      "--toml",
+      "-j",
+      "x.title",
+    ]);
+    (await toResult(output)).should.deepEqual({
+      mustPrint: true,
+      result: ["TOML Example"],
+    });
+  });
+
   it(`Handles expressions with quotes`, async () => {
     const output = await evaluate([`["a,b", "c,d"]`, "-j", `x.split(",")`]);
     (await toResult(output)).should.deepEqual({

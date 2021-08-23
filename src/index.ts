@@ -30,6 +30,7 @@ import write from "./operators/write.js";
 import asString from "./operators/asString.js";
 import asJson from "./operators/asJson.js";
 import asYaml from "./operators/asYaml.js";
+import asToml from "./operators/asToml.js";
 
 export { PipelineValue, PipelineError } from "./pipeline.js";
 
@@ -180,6 +181,9 @@ export async function evaluateInternal(
 
     /* Treats input as YAML */
     [(x) => x === "--yaml", asYaml],
+
+    /* Treats input as TOML */
+    [(x) => x === "--toml", asToml],
 
     /* Logging */
     [(x) => x === "-l", log],
