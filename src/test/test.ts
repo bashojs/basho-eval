@@ -209,6 +209,19 @@ describe("basho", () => {
     });
   });
 
+  it(`Parses input as YAML`, async () => {
+    const output = await evaluate([
+      `["---", "a:", "  b: hello" ]`,
+      "--yaml",
+      "-j",
+      "x.a.b",
+    ]);
+    (await toResult(output)).should.deepEqual({
+      mustPrint: true,
+      result: ["hello"],
+    });
+  });
+
   it(`Handles expressions with quotes`, async () => {
     const output = await evaluate([`["a,b", "c,d"]`, "-j", `x.split(",")`]);
     (await toResult(output)).should.deepEqual({
@@ -323,7 +336,7 @@ describe("basho", () => {
       "path",
       "path",
       "-j",
-      "path.basename(\"/home/jeswin/boom\")",
+      'path.basename("/home/jeswin/boom")',
     ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
@@ -394,13 +407,7 @@ describe("basho", () => {
   });
 
   it(`Defines an expression containing a zero`, async () => {
-    const output = await evaluate([
-      "-d",
-      "justzero",
-      "0",
-      "-j",
-      "k.justzero",
-    ]);
+    const output = await evaluate(["-d", "justzero", "0", "-j", "k.justzero"]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
       result: [0],

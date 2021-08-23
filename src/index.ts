@@ -29,6 +29,7 @@ import terminate from "./operators/terminate.js";
 import write from "./operators/write.js";
 import asString from "./operators/asString.js";
 import asJson from "./operators/asJson.js";
+import asYaml from "./operators/asYaml.js";
 
 export { PipelineValue, PipelineError } from "./pipeline.js";
 
@@ -176,6 +177,9 @@ export async function evaluateInternal(
 
     /* Treats input as JSON */
     [(x) => x === "--json", asJson],
+
+    /* Treats input as YAML */
+    [(x) => x === "--yaml", asYaml],
 
     /* Logging */
     [(x) => x === "-l", log],
