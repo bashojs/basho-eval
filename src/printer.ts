@@ -24,7 +24,7 @@ export function getPrinter(printFn: BashoLogFn) {
         const result = await fn(await x.value, i);
         printFn(
           result instanceof BashoEvalError
-            ? `Failed to evaluate expression: ${expression}.`
+            ? `Error while evaluating expression: ${expression}.`
             : result
         );
       }

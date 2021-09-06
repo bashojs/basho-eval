@@ -24,7 +24,7 @@ export default async function onError(
           const result = await fn(x, i);
           return result instanceof BashoEvalError
             ? new PipelineError(
-                `Failed to evaluate error expression: ${expression}.`,
+                `Error while evaluating error expression: ${expression}.`,
                 result.error,
                 x
               )

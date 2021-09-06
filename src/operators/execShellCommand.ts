@@ -25,7 +25,7 @@ export async function shellCmd(
           return cmd instanceof BashoEvalError
             ? Seq.of([
                 new PipelineError(
-                  `Failed to execute shell command: ${template}`,
+                  `Error while executing shell command: ${template}`,
                   cmd.error
                 ),
               ])
@@ -42,7 +42,7 @@ export async function shellCmd(
         } catch (ex) {
           return Seq.of([
             new PipelineError(
-              `Failed to execute shell command: ${template}`,
+              `Error while executing shell command: ${template}`,
               ex
             ),
           ]);
@@ -69,7 +69,7 @@ export async function shellCmd(
                     );
                   } catch (ex) {
                     return new PipelineError(
-                      `Failed to execute shell command: ${template}`,
+                      `Error while executing shell command: ${template}`,
                       ex,
                       x
                     );

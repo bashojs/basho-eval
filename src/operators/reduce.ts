@@ -20,7 +20,7 @@ async function doReduce(
   const output =
     initialValue instanceof BashoEvalError
       ? new PipelineError(
-          `Failed to evaluate expression: ${initialValue}.`,
+          `Error while evaluating expression: ${initialValue}.`,
           initialValue.error
         )
       : await input.reduce(
@@ -34,7 +34,7 @@ async function doReduce(
                   const result = await fn(acc, await x.value, i);
                   return result instanceof BashoEvalError
                     ? new PipelineError(
-                        `Failed to evaluate expression: ${exp}.`,
+                        `Error while evaluating expression: ${exp}.`,
                         result.error,
                         x
                       )

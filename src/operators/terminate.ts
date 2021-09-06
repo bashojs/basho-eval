@@ -25,7 +25,7 @@ export default async function terminate(
         const result = await fn(await x.value, i);
         if (result instanceof BashoEvalError) {
           return new PipelineError(
-            `Failed to evaluate expression: ${expression}.`,
+            `Error while evaluating expression: ${expression}.`,
             result.error,
             x
           );

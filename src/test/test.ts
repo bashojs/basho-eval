@@ -4,7 +4,8 @@ import "should";
 import child_process from "child_process";
 import { evaluate } from "../index.js";
 import { BashoEvaluationResult } from "../types.js";
-import { PipelineValue } from "../pipeline.js";
+import { PipelineError, PipelineValue } from "../pipeline.js";
+import should from "should";
 
 function execute(cmd: string): any {
   return new Promise((resolve, reject) => {
@@ -674,10 +675,11 @@ describe("basho", () => {
   });
 
   it(`Handles an error thrown`, async () => {
-    const output = await evaluate(["-j", `new Error("It didn't work.")`]);
+    const output = await evaluate(["-j", `error("It didn't work.")`]);
     const result = await toResult(output);
     result.mustPrint.should.deepEqual(true);
-    result.result.toString().should.equal(`Error: It didn't work.`);
+    should.equal(result.result[0] instanceof PipelineError, true);
+    result.result[0].message.should.equal(`Error while evaluating expression: error("It didn't work.").`);
   });
 
   it(`Computes Fibonacci Series`, async () => {

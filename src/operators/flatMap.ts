@@ -24,7 +24,7 @@ async function doFlatMap(
           return result instanceof BashoEvalError
             ? [
                 new PipelineError(
-                  `Failed to evaluate expression: ${exp}.`,
+                  `Error while evaluating expression: ${exp}.`,
                   result.error,
                   x
                 ) as PipelineItem
