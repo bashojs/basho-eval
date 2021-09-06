@@ -673,6 +673,13 @@ describe("basho", () => {
     });
   });
 
+  it(`Handles an error thrown`, async () => {
+    const output = await evaluate(["-j", `new Error("It didn't work.")`]);
+    const result = await toResult(output);
+    result.mustPrint.should.deepEqual(true);
+    result.result.toString().should.equal(`Error: It didn't work.`);
+  });
+
   it(`Computes Fibonacci Series`, async () => {
     const output = await evaluate([
       "[[[0], 1]]",

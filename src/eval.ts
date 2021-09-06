@@ -15,7 +15,7 @@ export function evalWithCatch(
 ): (...args: Array<any>) => any {
   try {
     const fn = eval(`k => (${exp})`)(evalScope.proxy);
-    return async function() {
+    return async function () {
       try {
         const maybePromise = await fn.apply(undefined, arguments);
         return await unwrapNestedPromises(maybePromise);
@@ -39,19 +39,25 @@ export async function evalExpression(
 ): Promise<Seq<PipelineItem>> {
   return isInitialInput
     ? await (async () => {
-        const code = `() => (${exp})`;
-        const fn = evalWithCatch(code, evalScope);
-        const input = await fn();
-        return input instanceof BashoEvalError
-          ? Seq.of([
-              new PipelineError(
-                `Failed to evaluate expression: ${exp}.`,
-                input.error
-              )
-            ])
-          : Array.isArray(input)
-          ? Seq.of(input.map(i => new PipelineValue(i)))
-          : Seq.of([new PipelineValue(input)]);
+        try {
+          const code = `() => (${exp})`;
+          const fn = evalWithCatch(code, evalScope);
+          const input = await fn();
+          return input instanceof BashoEvalError
+            ? Seq.of([
+                new PipelineError(
+                  `Failed to evaluate expression: ${exp}.`,
+                  input.error
+                ),
+              ])
+            : Array.isArray(input)
+            ? Seq.of(input.map((i) => new PipelineValue(i)))
+            : Seq.of([new PipelineValue(input)]);
+        } catch (ex) {
+          return Seq.of([
+            new PipelineError(`Failed to evaluate expression: ${exp}.`, ex),
+          ]);
+        }
       })()
     : await (async () => {
         const code = `(x, i) => (${exp})`;
@@ -61,15 +67,23 @@ export async function evalExpression(
               ? x
               : x instanceof PipelineValue
               ? await (async () => {
-                  const fn = evalWithCatch(code, evalScope);
-                  const result = await fn(await x.value, i);
-                  return result instanceof BashoEvalError
-                    ? new PipelineError(
-                        `Failed to evaluate expression: ${exp}.`,
-                        result.error,
-                        x
-                      )
-                    : new PipelineValue(result, x);
+                  try {
+                    const fn = evalWithCatch(code, evalScope);
+                    const result = await fn(await x.value, i);
+                    return result instanceof BashoEvalError
+                      ? new PipelineError(
+                          `Failed to evaluate expression: ${exp}.`,
+                          result.error,
+                          x
+                        )
+                      : new PipelineValue(result, x);
+                  } catch (ex) {
+                    return new PipelineError(
+                      `Failed to evaluate expression: ${exp}.`,
+                      ex,
+                      x
+                    );
+                  }
                 })()
               : exception(`Invalid item ${x} in pipeline.`)
         );
