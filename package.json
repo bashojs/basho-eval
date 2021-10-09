@@ -1,6 +1,6 @@
 {
   "name": "basho-eval",
-  "version": "7.0.1",
+  "version": "7.0.2",
   "main": "dist/index.js",
   "type": "module",
   "types": "dist/index.d.ts",
@@ -15,14 +15,14 @@
     "test": "mocha dist/test/test.js"
   },
   "dependencies": {
-    "@types/node-fetch": "^3.0.3",
+    "@types/js-yaml": "^4.0.3",
+    "@types/node-fetch": "^2.5.12",
     "js-yaml": "^4.1.0",
     "lazily-async": "^2.0.4",
-    "node-fetch": "^3.0.0",
+    "node-fetch": "^2.6.5",
     "toml": "^3.0.0"
   },
   "devDependencies": {
-    "@types/js-yaml": "^4.0.3",
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.10.3",
     "@types/should": "^13.0.0",
