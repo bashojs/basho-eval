@@ -31,6 +31,9 @@ import asString from "./operators/asString.js";
 import asJson from "./operators/asJson.js";
 import asYaml from "./operators/asYaml.js";
 import asToml from "./operators/asToml.js";
+import yaml from "js-yaml";
+import toml from "toml";
+import fetch from "node-fetch";
 
 export { PipelineValue, PipelineError } from "./pipeline.js";
 
@@ -50,8 +53,16 @@ export class BashoEvalError {
   }
 }
 
+const builtIns = {
+  lib: {
+    yaml: (str: string) => yaml.load(str),
+    toml: (str: string) => toml.parse(str),
+    fetch,
+  },
+};
+
 function createProxy(): EvaluationStack {
-  const evalScope: EvaluationEnv[] = [{}];
+  const evalScope: EvaluationEnv[] = [builtIns];
 
   const handler = {
     get: (evalScope: EvaluationEnv[], prop: string) => {

@@ -1,6 +1,6 @@
 {
   "name": "basho-eval",
-  "version": "6.4.0",
+  "version": "7.0.0",
   "main": "dist/index.js",
   "type": "module",
   "types": "dist/index.d.ts",
@@ -15,8 +15,10 @@
     "test": "mocha dist/test/test.js"
   },
   "dependencies": {
+    "@types/node-fetch": "^3.0.3",
     "js-yaml": "^4.1.0",
     "lazily-async": "^2.0.4",
+    "node-fetch": "^3.0.0",
     "toml": "^3.0.0"
   },
   "devDependencies": {

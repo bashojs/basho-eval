@@ -679,7 +679,9 @@ describe("basho", () => {
     const result = await toResult(output);
     result.mustPrint.should.deepEqual(true);
     should.equal(result.result[0] instanceof PipelineError, true);
-    result.result[0].message.should.equal(`Error while evaluating expression: error("It didn't work.").`);
+    result.result[0].message.should.equal(
+      `Error while evaluating expression: error("It didn't work.").`
+    );
   });
 
   it(`Computes Fibonacci Series`, async () => {
@@ -699,5 +701,37 @@ describe("basho", () => {
       mustPrint: true,
       result: [[0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233]],
     });
+  });
+
+  it(`Includes yaml parse builtin`, async () => {
+    const output = await evaluate([
+      `"hello:\\r\\n  world:\\r\\n    p: true"`,
+      "-j",
+      "k.lib.yaml(x)",
+    ]);
+    (await toResult(output)).should.deepEqual({
+      mustPrint: true,
+      result: [{ hello: { world: { p: true } } }],
+    });
+  });
+
+  it(`Includes toml parse builtin`, async () => {
+    const output = await evaluate([
+      `'title = "TOML Example"'`,
+      "-j",
+      "k.lib.toml(x)",
+    ]);
+    ((await toResult(output)) as any).result[0].title.should.equal(
+      "TOML Example"
+    );
+  });
+
+  it(`Includes fetch builtin`, async () => {
+    const output = await evaluate([
+      `"1"`,
+      "-j",
+      "k.lib.fetch",
+    ]);
+    should.exist(((await toResult(output)) as any).result[0]);
   });
 });
