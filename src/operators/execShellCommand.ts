@@ -33,9 +33,8 @@ export async function shellCmd(
                 const { stdout } = await exec(cmd);
                 return Seq.of(
                   stdout
+                    .replace(/\n$/, "")
                     .split("\n")
-                    .filter((x) => x !== "")
-                    .map((x) => x.replace(/\n$/, ""))
                     .map((i) => new PipelineValue(i))
                 );
               })();
