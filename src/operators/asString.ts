@@ -22,7 +22,7 @@ export default async function asString(
     evalScope,
     Seq.of([
       new PipelineValue(
-        items.map((x) => (x instanceof PipelineValue ? x.value : x)).join("")
+        items.map((x) => (x instanceof PipelineValue ? x.value : x)).join("\n")
       ),
     ]),
     mustPrint,

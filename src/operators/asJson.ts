@@ -23,7 +23,7 @@ export default async function asJson(
     Seq.of([
       new PipelineValue(
         JSON.parse(
-          items.map((x) => (x instanceof PipelineValue ? x.value : x)).join("")
+          items.map((x) => (x instanceof PipelineValue ? x.value : x)).join("\n")
         )
       ),
     ]),
