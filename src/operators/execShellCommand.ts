@@ -59,8 +59,8 @@ export async function shellCmd(
                     const cmd = await fn(value, i);
                     const { stdout } = await exec(cmd);
                     const items = stdout
+                      .replace(/\n$/, "")
                       .split("\n")
-                      .filter((x) => x !== "")
                       .map((x) => x.replace(/\n$/, ""));
                     return new PipelineValue(
                       items.length === 1 ? items[0] : items,
