@@ -56,6 +56,7 @@ export class BashoEvalError {
 const builtIns = {
   lib: {
     yaml: (str: string) => yaml.load(str),
+    toYaml: (obj: any, options = {}) => yaml.dump(obj, options),
     toml: (str: string) => toml.parse(str),
     fetch,
   },

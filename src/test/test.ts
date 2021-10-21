@@ -715,6 +715,18 @@ describe("basho", () => {
     });
   });
 
+  it(`Generates yaml`, async () => {
+    const output = await evaluate([
+      `{ a: 10, b: { c: 20 } }`,
+      "-j",
+      "k.lib.toYaml(x)",
+    ]);
+    (await toResult(output)).should.deepEqual({
+      mustPrint: true,
+      result: ["a: 10\nb:\n  c: 20\n"],
+    });
+  });
+
   it(`Includes toml parse builtin`, async () => {
     const output = await evaluate([
       `'title = "TOML Example"'`,
