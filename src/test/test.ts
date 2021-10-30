@@ -331,9 +331,9 @@ describe("basho", () => {
         "-a",
         argName,
         "path",
-        "pathMod",
+        "pathModule",
         "-j",
-        "pathMod.join.apply(pathMod, x)",
+        "pathModule.join.apply(pathModule, x)",
       ]);
       (await toResult(output)).should.deepEqual({
         mustPrint: true,
@@ -344,8 +344,6 @@ describe("basho", () => {
 
   it(`Calls a node module (working dir)`, async () => {
     const output = await evaluate([
-      `["/a", "b", "c"]`,
-      "-a",
       "--import",
       "path",
       "path",

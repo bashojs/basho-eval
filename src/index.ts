@@ -33,7 +33,9 @@ import asYaml from "./operators/asYaml.js";
 import asToml from "./operators/asToml.js";
 import yaml from "js-yaml";
 import toml from "toml";
-import fetch from "node-fetch";
+
+// Node fetch is not ESM.
+const nodeFetch = (await import("node-fetch" as any)).default;
 
 export { PipelineValue, PipelineError } from "./pipeline.js";
 
@@ -58,7 +60,7 @@ const builtIns = {
     yaml: (str: string) => yaml.load(str),
     toYaml: (obj: any, options = {}) => yaml.dump(obj, options),
     toml: (str: string) => toml.parse(str),
-    fetch,
+    fetch: nodeFetch,
   },
 };
 

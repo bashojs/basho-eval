@@ -1,51 +1,20 @@
 import path from "path";
 import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types.js";
 import { Seq } from "lazily-async";
-import * as util from "util";
-import * as fs from "fs";
 import { PipelineItem } from "../pipeline.js";
 import { evaluateInternal } from "../index.js";
 
-const stat = util.promisify(fs.stat);
-
-async function exists(somePath: string) {
-  try {
-    const _ = await stat(somePath);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function importModule(
-  filePath: string,
+export async function evalImport(
+  filename: string,
   name: string,
-  alias: string,
-  isRelative: boolean
+  alias: string
 ) {
-  if (isRelative) {
-    (global as any)[alias] = (await import(filePath))[name];
-  } else {
-    const pathInNodeModules = path.join(
-      process.cwd(),
-      "node_modules",
-      filePath
-    );
-    if (await exists(pathInNodeModules)) {
-      (global as any)[alias] = (await import(pathInNodeModules))[name];
-    } else {
-      (global as any)[alias] = (await import(filePath))[name];
-    }
-  }
-}
-
-async function evalImport(filename: string, name: string, alias: string) {
   const isRelative =
     filename.startsWith("./") ||
     filename.startsWith("../") ||
     filename.endsWith(".js");
   const filePath = isRelative ? path.join(process.cwd(), filename) : filename;
-  await importModule(filePath, name, alias, isRelative);
+  (global as any)[alias] = (await import(filePath))[name];
 }
 
 export function defaultImport() {
@@ -74,7 +43,7 @@ export function defaultImport() {
       isFirstParam,
       expressionStack
     );
-  }
+  };
 }
 
 export function namedImport() {
@@ -103,5 +72,5 @@ export function namedImport() {
       isFirstParam,
       expressionStack
     );
-  }
+  };
 }
