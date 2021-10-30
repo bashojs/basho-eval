@@ -3,18 +3,57 @@ import { EvaluationStack, BashoLogFn, ExpressionStackEntry } from "../types.js";
 import { Seq } from "lazily-async";
 import { PipelineItem } from "../pipeline.js";
 import { evaluateInternal } from "../index.js";
+import * as util from "util";
+import * as fs from "fs";
+
+const stat = util.promisify(fs.stat);
+
+async function exists(somePath: string) {
+  try {
+    const _ = await stat(somePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export async function evalImport(
-  filename: string,
+  pathToImport: string,
   name: string,
   alias: string
 ) {
-  const isRelative =
-    filename.startsWith("./") ||
-    filename.startsWith("../") ||
-    filename.endsWith(".js");
-  const filePath = isRelative ? path.join(process.cwd(), filename) : filename;
-  (global as any)[alias] = (await import(filePath))[name];
+  const isFile =
+    pathToImport.endsWith(".js") ||
+    pathToImport.endsWith(".cjs") ||
+    pathToImport.endsWith(".mjs");
+
+  if (isFile) {
+    const fileToLoad = path.join(process.cwd(), pathToImport);
+    (global as any)[alias] = (await import(fileToLoad))[name];
+  } else {
+    try {
+      // First let's just try to import the module.
+      (global as any)[alias] = (await import(pathToImport))[name];
+    } catch {
+      const pathInNodeModules = path.join(
+        process.cwd(),
+        "node_modules",
+        pathToImport
+      );
+
+      // if that doesn't work, perhaps the module is added locally.
+      if (await exists(pathInNodeModules)) {
+        // See if main is defined in package.json
+        const pkg = path.join(pathInNodeModules, "package.json");
+        const packageJSON = JSON.parse(fs.readFileSync(pkg, "utf8"));
+        const indexFile = packageJSON.main || "index.js";
+        const fileToLoad = path.join(pathInNodeModules, indexFile);
+        (global as any)[alias] = (await import(fileToLoad))[alias];
+      } else {
+        throw new Error(`Unable to find module ${pathToImport}.`);
+      }
+    }
+  }
 }
 
 export function defaultImport() {

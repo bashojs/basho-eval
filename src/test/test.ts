@@ -701,11 +701,14 @@ describe("basho", () => {
     });
   });
 
-  it(`Includes yaml parse builtin`, async () => {
+  it(`Includes yaml module`, async () => {
     const output = await evaluate([
+      "-i",
+      "js-yaml",
+      "libyaml",
       `"hello:\\r\\n  world:\\r\\n    p: true"`,
       "-j",
-      "k.lib.yaml(x)",
+      "libyaml.load(x)",
     ]);
     (await toResult(output)).should.deepEqual({
       mustPrint: true,
@@ -713,35 +716,21 @@ describe("basho", () => {
     });
   });
 
-  it(`Generates yaml`, async () => {
+  it(`Includes toml module`, async () => {
     const output = await evaluate([
-      `{ a: 10, b: { c: 20 } }`,
-      "-j",
-      "k.lib.toYaml(x)",
-    ]);
-    (await toResult(output)).should.deepEqual({
-      mustPrint: true,
-      result: ["a: 10\nb:\n  c: 20\n"],
-    });
-  });
-
-  it(`Includes toml parse builtin`, async () => {
-    const output = await evaluate([
+      "-i",
+      "toml",
+      "libtoml",
       `'title = "TOML Example"'`,
       "-j",
-      "k.lib.toml(x)",
+      "libtoml.parse(x)",
     ]);
     ((await toResult(output)) as any).result[0].title.should.equal(
       "TOML Example"
     );
   });
 
-  it(`Includes fetch builtin`, async () => {
-    const output = await evaluate([
-      `"1"`,
-      "-j",
-      "k.lib.fetch",
-    ]);
-    should.exist(((await toResult(output)) as any).result[0]);
+  it(`Includes node-fetch module`, async () => {
+    await evaluate(["-i", "node-fetch", "libfetch"]);
   });
 });
