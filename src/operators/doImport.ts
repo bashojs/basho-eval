@@ -48,7 +48,7 @@ export async function evalImport(
         const packageJSON = JSON.parse(fs.readFileSync(pkg, "utf8"));
         const indexFile = packageJSON.main || "index.js";
         const fileToLoad = path.join(pathInNodeModules, indexFile);
-        (global as any)[alias] = (await import(fileToLoad))[alias];
+        (global as any)[alias] = (await import(fileToLoad))[name];
       } else {
         throw new Error(`Unable to find module ${pathToImport}.`);
       }
