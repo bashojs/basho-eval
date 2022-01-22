@@ -1,6 +1,6 @@
 {
   "name": "basho-eval",
-  "version": "8.0.3",
+  "version": "8.0.4",
   "main": "dist/index.js",
   "type": "module",
   "types": "dist/index.d.ts",
